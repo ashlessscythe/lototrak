@@ -1,4 +1,4 @@
-LOTO TRACKER IMPLEMENTATION PLAN
+lockout tagout TRACKER IMPLEMENTATION PLAN
 ===============================
 
 MILESTONE 1: Project Setup and Authentication
@@ -26,6 +26,7 @@ MILESTONE 1: Project Setup and Authentication
 [ ] Setup dark/light mode
     npx shadcn@latest add theme-provider
     - Implement theme toggle component
+    - Moon Sun Icon for dark/light modes
     - Add system preference detection
     - Test theme across all components
 
