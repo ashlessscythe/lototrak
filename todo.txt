@@ -23,12 +23,12 @@ MILESTONE 1: Project Setup and Authentication
     npx shadcn@latest add sheet
     npx shadcn@latest add tabs
 
-[ ] Setup dark/light mode
-    npx shadcn@latest add theme-provider
-    - Implement theme toggle component
-    - Moon Sun Icon for dark/light modes
+[X] Setup dark/light mode
+    - Implement theme toggle component with moon/sun icons
     - Add system preference detection
+    - Configure theme provider
     - Test theme across all components
+    - Add environment variables for app configuration
 
 [ ] Setup NextAuth.js
     npm install next-auth@latest

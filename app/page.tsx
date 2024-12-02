@@ -1,103 +1,144 @@
-import Image from "next/image";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { SiteHeader } from "@/components/site-header";
+import { siteConfig } from "@/lib/config";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="font-mono font-bold bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="relative min-h-screen">
+      <SiteHeader />
+      <main className="relative">
+        {/* Hero Section */}
+        <section className="container mx-auto px-4 py-24 text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-4">
+            {siteConfig.name}
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8">
+            Modernizing Safety Protocols for the Digital Age
+          </p>
+          <div className="flex justify-center gap-4">
+            <Button size="lg">Get Started</Button>
+            <Button size="lg" variant="outline">
+              Learn More
+            </Button>
+          </div>
+          <Separator className="my-8" />
+        </section>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm transition-colors hover:bg-black/[.05] dark:hover:bg-white/[.05] border border-black/[.08] dark:border-white/[.08]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={16}
-              height={16}
-              priority
-            />
-            Deploy
-          </a>
-          <a
-            className="flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm transition-colors hover:bg-black/[.05] dark:hover:bg-white/[.05] border border-black/[.08] dark:border-white/[.08]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Docs
-          </a>
-        </div>
+        {/* Features Section */}
+        <section id="features" className="container mx-auto px-4 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Digital Safety Management</CardTitle>
+                <CardDescription>
+                  Streamline your lockout/tagout procedures with QR-based
+                  tracking
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Enhance workplace safety with digital tracking, real-time
+                  status updates, and comprehensive audit trails.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>OSHA Compliance</CardTitle>
+                <CardDescription>
+                  Stay compliant with automated documentation
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Maintain detailed records of all lockout events, personnel
+                  actions, and safety procedures.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>Real-time Monitoring</CardTitle>
+                <CardDescription>
+                  Track equipment status instantly
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  Monitor lock statuses, receive instant notifications, and
+                  manage emergency overrides efficiently.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* Benefits Section */}
+        <section
+          id="benefits"
+          className="container mx-auto px-4 py-16 bg-muted/50"
+        >
+          <h2 className="text-3xl font-bold text-center mb-12">
+            Why Choose {siteConfig.name}?
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Enhanced Safety</h3>
+              <p className="text-muted-foreground">
+                Reduce workplace accidents with foolproof digital tracking and
+                verification systems.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Improved Efficiency</h3>
+              <p className="text-muted-foreground">
+                Streamline workflows with QR code scanning and mobile-first
+                design.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Complete Visibility</h3>
+              <p className="text-muted-foreground">
+                Access comprehensive reports and audit trails for better
+                oversight.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Regulatory Compliance</h3>
+              <p className="text-muted-foreground">
+                Meet and exceed safety standards with automated documentation.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="container mx-auto px-4 py-24 text-center">
+          <h2 className="text-3xl font-bold mb-8">
+            Ready to Modernize Your Safety Protocols?
+          </h2>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Join industry leaders in transforming workplace safety management
+            with {siteConfig.name}'s comprehensive digital solution.
+          </p>
+          <div className="flex justify-center gap-4">
+            <Button size="lg">Start Free Trial</Button>
+            <Button size="lg" variant="outline">
+              Contact Sales
+            </Button>
+          </div>
+        </section>
       </main>
-
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-            className="dark:invert"
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-            className="dark:invert"
-          />
-          Templates
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-            className="dark:invert"
-          />
-          Deploy
-        </a>
-      </footer>
     </div>
   );
 }
