@@ -33,6 +33,19 @@ async function createLockWithEvents(userId: string) {
   return lock;
 }
 
+function getRoleBasedPassword(role: Role): string {
+  switch (role) {
+    case Role.ADMIN:
+      return "adminpass";
+    case Role.SUPERVISOR:
+      return "supervisorpass";
+    case Role.USER:
+      return "userpass";
+    default:
+      return "userpass";
+  }
+}
+
 async function main() {
   // Parse command line arguments
   const argv = await yargs(hideBin(process.argv))
@@ -47,7 +60,7 @@ async function main() {
     })
     .option("clear", {
       type: "boolean",
-      description: "Clear existing users before seeding",
+      description: "Clear existing data before seeding",
     }).argv;
 
   // Clear existing data if --clear flag is present
@@ -59,13 +72,13 @@ async function main() {
   }
 
   // Create default bob user with locks and events
-  const hashedPassword = await hash("bob", 10);
+  const bobPassword = await hash("bob", 10);
   const bob = await prisma.user.upsert({
     where: { email: "bob@bob.bob" },
     update: {},
     create: {
       email: "bob@bob.bob",
-      password: hashedPassword,
+      password: bobPassword,
       name: "Bob",
       role: Role.ADMIN,
     },
@@ -86,18 +99,33 @@ async function main() {
     const count = argv.count;
     console.log(`Generating ${count} faker users...`);
 
+    let adminCount = 0; // Track number of additional admins created
+
     for (let i = 0; i < count; i++) {
       const email = faker.internet.email();
-      const password = await hash(faker.internet.password(), 10);
+
+      // Determine role - ensure only one additional admin
+      let role: Role;
+      if (adminCount === 0 && i === 0) {
+        role = Role.ADMIN;
+        adminCount++;
+      } else {
+        // Randomly assign SUPERVISOR or USER role
+        role = Math.random() < 0.3 ? Role.SUPERVISOR : Role.USER;
+      }
+
+      const rolePassword = getRoleBasedPassword(role);
+      const password = await hash(rolePassword, 10);
+
       const user = await prisma.user.create({
         data: {
           email,
           password,
           name: faker.person.fullName(),
-          role: Role.USER,
+          role,
         },
       });
-      console.log("Created faker user:", user.email);
+      console.log(`Created faker user: ${user.email} with role: ${role}`);
 
       // Create locks for each faker user
       const userLockCount = faker.number.int({ min: 1, max: 3 });
