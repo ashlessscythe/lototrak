@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/config";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -24,9 +25,11 @@ export default function Home() {
             Modernizing Safety Protocols for the Digital Age
           </p>
           <div className="flex justify-center gap-4">
-            <Button size="lg">Get Started</Button>
-            <Button size="lg" variant="outline">
-              Learn More
+            <Button size="lg" asChild>
+              <Link href="/auth/signup">Get Started</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="#features">Learn More</Link>
             </Button>
           </div>
           <Separator className="my-8" />
@@ -132,9 +135,11 @@ export default function Home() {
             with {siteConfig.name}'s comprehensive digital solution.
           </p>
           <div className="flex justify-center gap-4">
-            <Button size="lg">Start Free Trial</Button>
-            <Button size="lg" variant="outline">
-              Contact Sales
+            <Button size="lg" asChild>
+              <Link href="/auth/signup">Start Free Trial</Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/auth/signin">Sign In</Link>
             </Button>
           </div>
         </section>

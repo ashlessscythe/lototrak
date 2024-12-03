@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role     @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  locks     Lock[]   @relation("AssignedTo")
+  events    Event[]
+}
+
+model Lock {
+  id          String    @id @default(cuid())
+  name        String
+  location    String
+  status      Status    @default(AVAILABLE)
+  qrCode      String    @unique
+  assignedTo  User?     @relation("AssignedTo", fields: [userId], references: [id])
+  userId      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  events      Event[]
+}
+
+model Event {
+  id        String    @id @default(cuid())
+  type      EventType
+  details   String
+  lock      Lock      @relation(fields: [lockId], references: [id])
+  lockId    String
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime  @default(now())
+}
+
+enum Role {
+  ADMIN
+  SUPERVISOR
+  USER
+  PENDING
+}
+
+enum Status {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  RETIRED
+}
+
+enum EventType {
+  LOCK_ASSIGNED
+  LOCK_RELEASED
+  STATUS_CHANGED
+  MAINTENANCE
+  EMERGENCY_OVERRIDE
+}

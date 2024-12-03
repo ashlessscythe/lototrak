@@ -30,13 +30,13 @@ MILESTONE 1: Project Setup and Authentication
     - Test theme across all components
     - Add environment variables for app configuration
 
-[ ] Setup NextAuth.js
+[X] Setup NextAuth.js
     npm install next-auth@latest
-    - Configure OAuth providers
+    - local auth only server side validation
     - Setup authentication API routes
     - Create protected routes
 
-[ ] Setup Prisma with Neon.tech
+[X] Setup Prisma with Neon.tech
     npm install prisma @prisma/client
     - Initialize Prisma
     - Configure database connection
