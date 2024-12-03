@@ -61,7 +61,9 @@ export default function Dashboard() {
                   <CardTitle className="text-lg">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Button className="w-full">View Locks</Button>
+                  <Button className="w-full">
+                    <Link href="/admin/locks">View Locks</Link>
+                  </Button>
                   <Button className="w-full" variant="outline">
                     View Events
                   </Button>

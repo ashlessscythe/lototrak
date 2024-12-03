@@ -67,15 +67,26 @@ export function SiteHeader() {
                   </Link>
                 </NavigationMenuItem>
                 {isAdminUser && (
-                  <NavigationMenuItem>
-                    <Link href="/admin" legacyBehavior passHref>
-                      <NavigationMenuLink
-                        className={navigationMenuTriggerStyle()}
-                      >
-                        Admin
-                      </NavigationMenuLink>
-                    </Link>
-                  </NavigationMenuItem>
+                  <>
+                    <NavigationMenuItem>
+                      <Link href="/admin" legacyBehavior passHref>
+                        <NavigationMenuLink
+                          className={navigationMenuTriggerStyle()}
+                        >
+                          Admin
+                        </NavigationMenuLink>
+                      </Link>
+                    </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <Link href="/admin/locks" legacyBehavior passHref>
+                        <NavigationMenuLink
+                          className={navigationMenuTriggerStyle()}
+                        >
+                          Locks
+                        </NavigationMenuLink>
+                      </Link>
+                    </NavigationMenuItem>
+                  </>
                 )}
               </>
             )}
@@ -95,7 +106,10 @@ export function SiteHeader() {
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent
+                align="end"
+                className="w-56 text-foreground bg-background border border-border rounded-md shadow-sm"
+              >
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {userRole !== "PENDING" && (
@@ -114,6 +128,9 @@ export function SiteHeader() {
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/admin/users">Manage Users</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/locks">Manage Locks</Link>
                         </DropdownMenuItem>
                       </>
                     )}

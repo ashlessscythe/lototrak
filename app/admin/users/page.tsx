@@ -125,10 +125,10 @@ export default function UsersPage() {
                           updateUserRole(user.id, value)
                         }
                       >
-                        <SelectTrigger className="w-[140px]">
+                        <SelectTrigger className="w-[140px] bg-background text-foreground border border-border rounded-md shadow-sm">
                           <SelectValue placeholder="Select role" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-lg">
                           {roleOptions.map((role) => (
                             <SelectItem key={role} value={role}>
                               {role}
