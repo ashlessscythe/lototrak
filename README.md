@@ -59,13 +59,40 @@ LOTO Tracker is a comprehensive digital system designed to modernize safety prot
 
    Update the `.env` file with your configuration.
 
-4. Start the development server:
+4. Initialize the database:
+
+   ```bash
+   npx prisma migrate dev
+   ```
+
+5. Seed the database:
+
+   ```bash
+   # Create default user (bob@bob.bob) with 2 locks
+   npx prisma db seed
+
+   # Create default user + 5 random users (each with 1-3 locks)
+   npx prisma db seed -- --use-faker
+
+   # Create default user + specific number of random users
+   npx prisma db seed -- --use-faker --count 10
+
+   # Clear existing data before seeding
+   npx prisma db seed -- --clear --use-faker
+   ```
+
+   The default user credentials are:
+
+   - Email: bob@bob.bob
+   - Password: bob
+
+6. Start the development server:
 
    ```bash
    npm run dev
    ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+7. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Development
 
