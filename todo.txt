@@ -61,7 +61,7 @@ TOLLGATE 1:
 
 MILESTONE 2: Core Features Implementation
 ---------------------------------------
-[ ] Install additional shadcn components
+[X] Install additional shadcn components
     npx shadcn@latest add table
     npx shadcn@latest add dialog
     npx shadcn@latest add select
@@ -69,11 +69,24 @@ MILESTONE 2: Core Features Implementation
     npx shadcn@latest add card
     npx shadcn@latest add badge
     npx shadcn@latest add separator
-[ ] Implement Lock Management
+[X] Implement Lock Management
     - CRUD operations
     - Status updates
     - Assignment functionality
     - QR code generation
+[ ] Implement Lock Assignment Process
+    - QR code scanning workflow
+      * Camera access for QR scanning
+      * QR code validation
+      * Error handling for invalid codes
+    - Lock assignment/release endpoints
+      * POST /api/locks/{id}/assign
+      * POST /api/locks/{id}/release
+      * Validation middleware
+    - Safety procedure verification
+      * Add safety procedures to lock model
+      * Implement safety checklist UI
+      * Require checklist completion before assignment
 [ ] Implement Event Tracking
     - Event logging system
     - Audit trail

@@ -20,27 +20,29 @@ model User {
 }
 
 model Lock {
-  id          String    @id @default(cuid())
-  name        String
-  location    String
-  status      Status    @default(AVAILABLE)
-  qrCode      String    @unique
-  assignedTo  User?     @relation("AssignedTo", fields: [userId], references: [id])
-  userId      String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  events      Event[]
+  id               String    @id @default(cuid())
+  name             String
+  location         String
+  status           Status    @default(AVAILABLE)
+  qrCode           String    @unique
+  safetyProcedures Json?    // Made optional with default null
+  assignedTo       User?     @relation("AssignedTo", fields: [userId], references: [id])
+  userId           String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  events           Event[]
 }
 
 model Event {
-  id        String    @id @default(cuid())
-  type      EventType
-  details   String
-  lock      Lock      @relation(fields: [lockId], references: [id])
-  lockId    String
-  user      User      @relation(fields: [userId], references: [id])
-  userId    String
-  createdAt DateTime  @default(now())
+  id            String    @id @default(cuid())
+  type          EventType
+  details       String
+  safetyChecks  Json?    // Optional safety checks
+  lock          Lock      @relation(fields: [lockId], references: [id])
+  lockId        String
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  createdAt     DateTime  @default(now())
 }
 
 enum Role {
@@ -63,4 +65,5 @@ enum EventType {
   STATUS_CHANGED
   MAINTENANCE
   EMERGENCY_OVERRIDE
+  SAFETY_CHECK_COMPLETED
 }
