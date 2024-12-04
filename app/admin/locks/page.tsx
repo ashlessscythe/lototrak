@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Lock, Status } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import {
   Table,
   TableBody,
@@ -44,6 +43,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 
 type LockWithAssignee = Lock & {
   assignedTo: {
@@ -67,7 +67,10 @@ export default function LocksPage() {
     name: "",
     location: "",
     status: "AVAILABLE" as Status,
+    safetyProcedures: [] as string[],
   });
+
+  const [newProcedure, setNewProcedure] = useState("");
 
   useEffect(() => {
     fetchLocks();
@@ -114,7 +117,16 @@ export default function LocksPage() {
         method: selectedLock ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          selectedLock ? { ...formData, id: selectedLock.id } : formData
+          selectedLock
+            ? {
+                ...formData,
+                id: selectedLock.id,
+                safetyProcedures: formData.safetyProcedures,
+              }
+            : {
+                ...formData,
+                safetyProcedures: formData.safetyProcedures,
+              }
         ),
       });
 
@@ -211,6 +223,23 @@ export default function LocksPage() {
     }
   };
 
+  const handleAddProcedure = () => {
+    if (newProcedure.trim()) {
+      setFormData({
+        ...formData,
+        safetyProcedures: [...formData.safetyProcedures, newProcedure.trim()],
+      });
+      setNewProcedure("");
+    }
+  };
+
+  const handleRemoveProcedure = (index: number) => {
+    setFormData({
+      ...formData,
+      safetyProcedures: formData.safetyProcedures.filter((_, i) => i !== index),
+    });
+  };
+
   const getStatusBadgeVariant = (status: Status) => {
     switch (status) {
       case "AVAILABLE":
@@ -253,6 +282,7 @@ export default function LocksPage() {
                       name: "",
                       location: "",
                       status: "AVAILABLE",
+                      safetyProcedures: [],
                     });
                   }}
                 >
@@ -301,10 +331,10 @@ export default function LocksPage() {
                           setFormData({ ...formData, status: value })
                         }
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-background text-foreground border border-border shadow-sm rounded-md">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-background text-foreground border border-border shadow-lg rounded-md">
                           {[
                             "AVAILABLE",
                             "IN_USE",
@@ -317,6 +347,44 @@ export default function LocksPage() {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <label htmlFor="safetyProcedures">
+                        Safety Procedures
+                      </label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="newProcedure"
+                          value={newProcedure}
+                          onChange={(e) => setNewProcedure(e.target.value)}
+                          placeholder="Add a safety procedure"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleAddProcedure}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      <div className="mt-2 space-y-2">
+                        {formData.safetyProcedures.map((procedure, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between bg-muted p-2 rounded-md"
+                          >
+                            <span>{procedure}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveProcedure(index)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                   <DialogFooter>
@@ -342,6 +410,7 @@ export default function LocksPage() {
                   <TableHead>Location</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Assigned To</TableHead>
+                  <TableHead>Safety Procedures</TableHead>
                   <TableHead>QR Code</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
@@ -391,6 +460,17 @@ export default function LocksPage() {
                         : "Unassigned"}
                     </TableCell>
                     <TableCell>
+                      <div className="max-w-[200px] space-y-1">
+                        {(lock.safetyProcedures as string[] | null)?.map(
+                          (procedure, index) => (
+                            <Badge key={index} variant="outline">
+                              {procedure}
+                            </Badge>
+                          )
+                        ) || "No procedures"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <Dialog>
                         <DialogTrigger asChild>
                           <Button variant="outline">View QR</Button>
@@ -435,6 +515,8 @@ export default function LocksPage() {
                               name: lock.name,
                               location: lock.location,
                               status: lock.status,
+                              safetyProcedures:
+                                (lock.safetyProcedures as string[]) || [],
                             });
                             setIsDialogOpen(true);
                           }}

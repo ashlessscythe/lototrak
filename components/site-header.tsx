@@ -66,6 +66,15 @@ export function SiteHeader() {
                     </NavigationMenuLink>
                   </Link>
                 </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <Link href="/locks/scan" legacyBehavior passHref>
+                    <NavigationMenuLink
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      Scan Lock
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
                 {isAdminUser && (
                   <>
                     <NavigationMenuItem>
@@ -116,6 +125,9 @@ export function SiteHeader() {
                   <>
                     <DropdownMenuItem asChild>
                       <Link href="/dashboard">Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/locks/scan">Scan Lock</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/profile">Profile Settings</Link>

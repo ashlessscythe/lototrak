@@ -58,10 +58,17 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, location, status } = body;
+    const { name, location, status, safetyProcedures } = body;
 
     if (!name || !location || !status) {
       return new NextResponse("Missing required fields", { status: 400 });
+    }
+
+    // Validate safety procedures
+    if (!Array.isArray(safetyProcedures)) {
+      return new NextResponse("Safety procedures must be an array", {
+        status: 400,
+      });
     }
 
     // Generate a unique QR code
@@ -73,6 +80,7 @@ export async function POST(req: Request) {
         location,
         status: status as Status,
         qrCode,
+        safetyProcedures: safetyProcedures as string[],
       },
     });
 
@@ -96,10 +104,17 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, name, location, status } = body;
+    const { id, name, location, status, safetyProcedures } = body;
 
     if (!id || !name || !location || !status) {
       return new NextResponse("Missing required fields", { status: 400 });
+    }
+
+    // Validate safety procedures
+    if (!Array.isArray(safetyProcedures)) {
+      return new NextResponse("Safety procedures must be an array", {
+        status: 400,
+      });
     }
 
     const lock = await prisma.lock.update({
@@ -108,6 +123,7 @@ export async function PUT(req: Request) {
         name,
         location,
         status: status as Status,
+        safetyProcedures: safetyProcedures as string[],
       },
     });
 
