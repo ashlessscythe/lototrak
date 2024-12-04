@@ -25,6 +25,7 @@ export interface Lock {
   location: string;
   status: Status;
   qrCode: string;
+  safetyProcedures?: string[] | null;
   userId?: string | null;
   createdAt: Date;
   updatedAt: Date;
