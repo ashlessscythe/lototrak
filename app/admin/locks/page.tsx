@@ -68,6 +68,7 @@ export default function LocksPage() {
     location: "",
     status: "AVAILABLE" as Status,
     safetyProcedures: [] as string[],
+    qrCode: "", // Added QR code field
   });
 
   const [newProcedure, setNewProcedure] = useState("");
@@ -283,6 +284,7 @@ export default function LocksPage() {
                       location: "",
                       status: "AVAILABLE",
                       safetyProcedures: [],
+                      qrCode: "", // Reset QR code
                     });
                   }}
                 >
@@ -321,6 +323,17 @@ export default function LocksPage() {
                           setFormData({ ...formData, location: e.target.value })
                         }
                         required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <label htmlFor="qrCode">QR Code Value (Optional)</label>
+                      <Input
+                        id="qrCode"
+                        value={formData.qrCode}
+                        onChange={(e) =>
+                          setFormData({ ...formData, qrCode: e.target.value })
+                        }
+                        placeholder="Leave blank for auto-generated value"
                       />
                     </div>
                     <div className="grid gap-2">
@@ -480,6 +493,9 @@ export default function LocksPage() {
                             <DialogTitle>QR Code for {lock.name}</DialogTitle>
                             <DialogDescription>
                               Scan this QR code to access the lock.
+                              <div className="mt-2 text-sm text-muted-foreground">
+                                Value: {lock.qrCode}
+                              </div>
                             </DialogDescription>
                           </DialogHeader>
                           <div className="flex justify-center p-4">
@@ -517,6 +533,7 @@ export default function LocksPage() {
                               status: lock.status,
                               safetyProcedures:
                                 (lock.safetyProcedures as string[]) || [],
+                              qrCode: lock.qrCode, // Set current QR code
                             });
                             setIsDialogOpen(true);
                           }}

@@ -36,19 +36,23 @@ export async function GET(
       return new NextResponse("Lock not found", { status: 404 });
     }
 
-    // Generate QR code as a PNG buffer
+    // Generate QR code as a PNG buffer - using just the QR code value for simpler QR code
     const qrCodeBuffer = await QRCode.toBuffer(lock.qrCode, {
       type: "png",
       width: 300,
-      margin: 1,
-      errorCorrectionLevel: "H",
+      margin: 4, // Increased margin for better visibility
+      errorCorrectionLevel: "M", // Reduced from H to M for less density
+      scale: 4, // Increased scale for clearer blocks
     });
 
     // Return QR code as a PNG image
     return new NextResponse(qrCodeBuffer, {
       headers: {
         "Content-Type": "image/png",
-        "Content-Disposition": `inline; filename="lock-${lockId}-qr.png"`,
+        "Content-Disposition": `inline; filename="lock-${lock.name
+          .toLowerCase()
+          .replace(/\s+/g, "-")}-qr.png"`,
+        "Cache-Control": "no-store", // Prevent caching to ensure QR codes are always fresh
       },
     });
   } catch (error) {

@@ -4,6 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/app/auth";
 import { EventType, Status } from "@prisma/client";
 
+// Helper to validate QR code format
+const isValidQRCode = (code: string) => {
+  // QR code should be alphanumeric and reasonable length
+  return /^[a-zA-Z0-9_-]{4,32}$/.test(code);
+};
+
 export async function POST(
   req: Request,
   { params }: { params: { lockId: string } }
@@ -32,8 +38,8 @@ export async function POST(
       },
     });
 
-    // If not found by ID, try QR code
-    if (!lock) {
+    // If not found by ID and looks like a QR code, try QR code lookup
+    if (!lock && isValidQRCode(lockId)) {
       lock = await prisma.lock.findUnique({
         where: { qrCode: lockId },
         include: {
@@ -76,7 +82,7 @@ export async function POST(
 
     // Update lock status and assign to user
     const updatedLock = await prisma.lock.update({
-      where: { id: lock.id }, // Use the found lock's ID
+      where: { id: lock.id },
       data: {
         status: Status.IN_USE,
         userId: session.user.id,
@@ -89,7 +95,7 @@ export async function POST(
         type: EventType.LOCK_ASSIGNED,
         details: "Lock assigned after safety checks",
         safetyChecks: safetyChecks,
-        lockId: lock.id, // Use the found lock's ID
+        lockId: lock.id,
         userId: session.user.id,
       },
     });

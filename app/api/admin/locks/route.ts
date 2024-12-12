@@ -5,6 +5,18 @@ import { Status } from "@/lib/types";
 import { nanoid } from "nanoid";
 import { authOptions } from "@/app/auth";
 
+// Helper to validate QR code format
+const isValidQRCode = (code: string) => {
+  // QR code should be alphanumeric and reasonable length (4-16 chars for better readability)
+  return /^[a-zA-Z0-9_-]{4,16}$/.test(code);
+};
+
+// Helper to generate a short, readable QR code
+const generateQRCode = () => {
+  // Generate a 6-character code for better readability
+  return nanoid(6);
+};
+
 export async function GET() {
   try {
     console.log("GET /api/admin/locks - Fetching session...");
@@ -58,7 +70,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, location, status, safetyProcedures } = body;
+    const { name, location, status, safetyProcedures, qrCode } = body;
 
     if (!name || !location || !status) {
       return new NextResponse("Missing required fields", { status: 400 });
@@ -71,15 +83,32 @@ export async function POST(req: Request) {
       });
     }
 
-    // Generate a unique QR code
-    const qrCode = nanoid();
+    // Generate QR code if not provided, or validate provided one
+    const finalQrCode = qrCode || generateQRCode();
+
+    // Validate QR code format
+    if (!isValidQRCode(finalQrCode)) {
+      return new NextResponse(
+        "Invalid QR code format. Must be 4-16 alphanumeric characters, underscores, or hyphens.",
+        { status: 400 }
+      );
+    }
+
+    // Check if QR code is already in use
+    const existingLock = await prisma.lock.findUnique({
+      where: { qrCode: finalQrCode },
+    });
+
+    if (existingLock) {
+      return new NextResponse("QR code already in use", { status: 400 });
+    }
 
     const lock = await prisma.lock.create({
       data: {
         name,
         location,
         status: status as Status,
-        qrCode,
+        qrCode: finalQrCode,
         safetyProcedures: safetyProcedures as string[],
       },
     });
@@ -104,7 +133,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { id, name, location, status, safetyProcedures } = body;
+    const { id, name, location, status, safetyProcedures, qrCode } = body;
 
     if (!id || !name || !location || !status) {
       return new NextResponse("Missing required fields", { status: 400 });
@@ -117,12 +146,35 @@ export async function PUT(req: Request) {
       });
     }
 
+    // If QR code is provided, validate its format
+    if (qrCode && !isValidQRCode(qrCode)) {
+      return new NextResponse(
+        "Invalid QR code format. Must be 4-16 alphanumeric characters, underscores, or hyphens.",
+        { status: 400 }
+      );
+    }
+
+    // If QR code is being changed, check if it's already in use
+    if (qrCode) {
+      const existingLock = await prisma.lock.findFirst({
+        where: {
+          qrCode: qrCode,
+          id: { not: id }, // Exclude current lock from check
+        },
+      });
+
+      if (existingLock) {
+        return new NextResponse("QR code already in use", { status: 400 });
+      }
+    }
+
     const lock = await prisma.lock.update({
       where: { id },
       data: {
         name,
         location,
         status: status as Status,
+        qrCode: qrCode || undefined, // Only update if provided
         safetyProcedures: safetyProcedures as string[],
       },
     });
