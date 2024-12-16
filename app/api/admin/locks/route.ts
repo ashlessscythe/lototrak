@@ -36,6 +36,9 @@ export async function GET() {
 
     console.log("Fetching locks from database...");
     const locks = await prisma.lock.findMany({
+      where: {
+        deleted: false, // Only fetch non-deleted locks
+      },
       include: {
         assignedTo: {
           select: {
@@ -94,7 +97,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if QR code is already in use
+    // Check if QR code is already in use (including deleted locks)
     const existingLock = await prisma.lock.findUnique({
       where: { qrCode: finalQrCode },
     });
@@ -110,6 +113,7 @@ export async function POST(req: Request) {
         status: status as Status,
         qrCode: finalQrCode,
         safetyProcedures: safetyProcedures as string[],
+        deleted: false,
       },
     });
 
@@ -154,16 +158,30 @@ export async function PUT(req: Request) {
       );
     }
 
+    // Check if lock exists and is not deleted
+    const existingLock = await prisma.lock.findFirst({
+      where: {
+        id,
+        deleted: false,
+      },
+    });
+
+    if (!existingLock) {
+      return new NextResponse("Lock not found or has been deleted", {
+        status: 404,
+      });
+    }
+
     // If QR code is being changed, check if it's already in use
     if (qrCode) {
-      const existingLock = await prisma.lock.findFirst({
+      const existingQRLock = await prisma.lock.findFirst({
         where: {
           qrCode: qrCode,
-          id: { not: id }, // Exclude current lock from check
+          id: { not: id },
         },
       });
 
-      if (existingLock) {
+      if (existingQRLock) {
         return new NextResponse("QR code already in use", { status: 400 });
       }
     }

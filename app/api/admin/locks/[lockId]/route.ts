@@ -3,15 +3,13 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/app/auth";
 
-// Define allowed statuses for deletion
-const DELETABLE_STATUSES = ["AVAILABLE", "RETIRED"];
-
 export async function DELETE(
   req: Request,
   { params }: { params: { lockId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
+
     if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
@@ -23,32 +21,41 @@ export async function DELETE(
 
     const { lockId } = params;
 
-    // First fetch the lock to check its status
-    const lock = await prisma.lock.findUnique({
+    // First get the lock to access its location
+    const existingLock = await prisma.lock.findUnique({
       where: { id: lockId },
-      select: { status: true, name: true },
     });
 
-    if (!lock) {
+    if (!existingLock) {
       return new NextResponse("Lock not found", { status: 404 });
     }
 
-    // Only allow deletion if lock is AVAILABLE or RETIRED
-    if (!DELETABLE_STATUSES.includes(lock.status)) {
-      return new NextResponse(
-        `Cannot delete lock "${
-          lock.name
-        }" because it is ${lock.status.toLowerCase()}. Only available or retired locks can be deleted.`,
-        { status: 400 }
-      );
-    }
+    // Then mark as deleted and create an event
+    const [lock, event] = await prisma.$transaction([
+      prisma.lock.update({
+        where: { id: lockId },
+        data: {
+          deleted: true,
+          status: "RETIRED", // Also set status to RETIRED
+          userId: null, // Remove any assignment
+        },
+      }),
+      prisma.event.create({
+        data: {
+          type: "MAINTENANCE",
+          details: "Lock marked as deleted",
+          location: existingLock.location,
+          lockId: lockId,
+          userId: session.user.id,
+        },
+      }),
+    ]);
 
-    // If status check passes, proceed with deletion
-    await prisma.lock.delete({
-      where: { id: lockId },
+    return NextResponse.json({
+      success: true,
+      message: "Lock marked as deleted",
+      lock,
     });
-
-    return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error("[LOCK_DELETE]", error);
     return new NextResponse("Internal error", { status: 500 });

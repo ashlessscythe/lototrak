@@ -25,10 +25,13 @@ async function createLockWithEvents(userId: string) {
       : `${randomNum} ${location}`;
   };
 
+  // get loc for use below
+  const location = generateLocation();
+
   const lock = await prisma.lock.create({
     data: {
       name: `Lock ${faker.number.int({ min: 1000, max: 9999 })}`, // Random lock identifier
-      location: generateLocation(), // Warehouse-oriented location
+      location: location, // Warehouse-oriented location
       status: Status.AVAILABLE,
       qrCode: faker.string.uuid(),
       userId,
@@ -37,10 +40,12 @@ async function createLockWithEvents(userId: string) {
           {
             type: EventType.LOCK_ASSIGNED,
             details: "Lock initially assigned",
+            location: location,
             userId,
           },
           {
             type: EventType.STATUS_CHANGED,
+            location: location,
             details: "Lock set to available",
             userId,
           },

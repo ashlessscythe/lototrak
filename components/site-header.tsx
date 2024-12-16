@@ -95,6 +95,15 @@ export function SiteHeader() {
                         </NavigationMenuLink>
                       </Link>
                     </NavigationMenuItem>
+                    <NavigationMenuItem>
+                      <Link href="/admin/events" legacyBehavior passHref>
+                        <NavigationMenuLink
+                          className={navigationMenuTriggerStyle()}
+                        >
+                          Events
+                        </NavigationMenuLink>
+                      </Link>
+                    </NavigationMenuItem>
                   </>
                 )}
               </>
@@ -143,6 +152,9 @@ export function SiteHeader() {
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/admin/locks">Manage Locks</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/events">View Events</Link>
                         </DropdownMenuItem>
                       </>
                     )}
