@@ -171,7 +171,11 @@ export default function LocksPage() {
         return;
       }
 
-      if (!response.ok) throw new Error("Failed to delete lock");
+      // If response is not ok, get the error message from the response
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || "Failed to delete lock");
+      }
 
       toast({
         title: "Success",
@@ -182,7 +186,8 @@ export default function LocksPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to delete lock",
+        description:
+          error instanceof Error ? error.message : "Failed to delete lock",
         variant: "destructive",
       });
     } finally {

@@ -30,7 +30,7 @@ model Lock {
   userId           String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-  events           Event[]
+  events           Event[]   @relation("LockEvents")
 }
 
 model Event {
@@ -38,7 +38,7 @@ model Event {
   type          EventType
   details       String
   safetyChecks  Json?    // Optional safety checks
-  lock          Lock      @relation(fields: [lockId], references: [id])
+  lock          Lock      @relation("LockEvents", fields: [lockId], references: [id], onDelete: Cascade)
   lockId        String
   user          User      @relation(fields: [userId], references: [id])
   userId        String

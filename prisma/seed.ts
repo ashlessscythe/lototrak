@@ -7,10 +7,28 @@ import { hideBin } from "yargs/helpers";
 const prisma = new PrismaClient();
 
 async function createLockWithEvents(userId: string) {
+  const warehouseLocations = [
+    "Staging Lane",
+    "Building",
+    "Dock Door",
+    "Warehouse Area",
+  ];
+
+  // Generate a random warehouse-oriented location
+  const generateLocation = () => {
+    const prefixOrSuffix = faker.datatype.boolean(); // Randomly decide if number comes before or after
+    const location = faker.helpers.arrayElement(warehouseLocations);
+    const randomNum = faker.number.int({ min: 1, max: 50 }); // Adjust range as needed
+
+    return prefixOrSuffix
+      ? `${location} ${randomNum}`
+      : `${randomNum} ${location}`;
+  };
+
   const lock = await prisma.lock.create({
     data: {
-      name: faker.commerce.productName(),
-      location: faker.location.streetAddress(),
+      name: `Lock ${faker.number.int({ min: 1000, max: 9999 })}`, // Random lock identifier
+      location: generateLocation(), // Warehouse-oriented location
       status: Status.AVAILABLE,
       qrCode: faker.string.uuid(),
       userId,
