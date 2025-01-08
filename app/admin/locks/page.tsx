@@ -68,7 +68,7 @@ export default function LocksPage() {
     location: "",
     status: "AVAILABLE" as Status,
     safetyProcedures: [] as string[],
-    qrCode: "", // Added QR code field
+    qrCode: "",
   });
 
   const [newProcedure, setNewProcedure] = useState("");
@@ -171,7 +171,6 @@ export default function LocksPage() {
         return;
       }
 
-      // If response is not ok, get the error message from the response
       if (!response.ok) {
         const errorData = await response.text();
         throw new Error(errorData || "Failed to delete lock");
@@ -289,7 +288,7 @@ export default function LocksPage() {
                       location: "",
                       status: "AVAILABLE",
                       safetyProcedures: [],
-                      qrCode: "", // Reset QR code
+                      qrCode: "",
                     });
                   }}
                 >
@@ -421,158 +420,323 @@ export default function LocksPage() {
               No locks found. Create one to get started.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead>Safety Procedures</TableHead>
-                  <TableHead>QR Code</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {locks.map((lock) => (
-                  <TableRow key={lock.id}>
-                    <TableCell>{lock.name}</TableCell>
-                    <TableCell>{lock.location}</TableCell>
-                    <TableCell className="text-center">
-                      <Select
-                        value={lock.status}
-                        onValueChange={(value: Status) =>
-                          handleStatusChange(lock.id, value)
-                        }
-                      >
-                        <SelectTrigger className="w-full max-w-[200px] mx-auto bg-background text-foreground border border-border rounded-md shadow-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background text-foreground border border-border rounded-md shadow-sm">
-                          {[
-                            "AVAILABLE",
-                            "IN_USE",
-                            "MAINTENANCE",
-                            "RETIRED",
-                          ].map((status) => (
-                            <SelectItem
-                              key={status}
-                              value={status}
-                              className="w-[140px]"
-                            >
-                              <Badge
-                                variant={getStatusBadgeVariant(
-                                  status as Status
-                                )}
-                              >
-                                {status}
-                              </Badge>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      {lock.assignedTo
-                        ? `${lock.assignedTo.name || lock.assignedTo.email}`
-                        : "Unassigned"}
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-[200px] space-y-1">
-                        {(lock.safetyProcedures as string[] | null)?.map(
-                          (procedure, index) => (
-                            <Badge key={index} variant="outline">
-                              {procedure}
-                            </Badge>
-                          )
-                        ) || "No procedures"}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline">View QR</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>QR Code for {lock.name}</DialogTitle>
-                            <DialogDescription>
-                              Scan this QR code to access the lock.
-                              <div className="mt-2 text-sm text-muted-foreground">
-                                Value: {lock.qrCode}
-                              </div>
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="flex justify-center p-4">
-                            <img
-                              src={`/api/admin/locks/${lock.id}/qr`}
-                              alt={`QR code for ${lock.name}`}
-                              className="w-64 h-64"
-                            />
+            <>
+              {/* Table view for desktop */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead>Safety Procedures</TableHead>
+                      <TableHead>QR Code</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {locks.map((lock) => (
+                      <TableRow key={lock.id}>
+                        <TableCell>{lock.name}</TableCell>
+                        <TableCell>{lock.location}</TableCell>
+                        <TableCell className="text-center">
+                          <Select
+                            value={lock.status}
+                            onValueChange={(value: Status) =>
+                              handleStatusChange(lock.id, value)
+                            }
+                          >
+                            <SelectTrigger className="w-full max-w-[200px] mx-auto">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[
+                                "AVAILABLE",
+                                "IN_USE",
+                                "MAINTENANCE",
+                                "RETIRED",
+                              ].map((status) => (
+                                <SelectItem
+                                  key={status}
+                                  value={status}
+                                  className="w-[140px]"
+                                >
+                                  <Badge
+                                    variant={getStatusBadgeVariant(
+                                      status as Status
+                                    )}
+                                  >
+                                    {status}
+                                  </Badge>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          {lock.assignedTo
+                            ? `${lock.assignedTo.name || lock.assignedTo.email}`
+                            : "Unassigned"}
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-[200px] space-y-1">
+                            {(lock.safetyProcedures as string[] | null)?.map(
+                              (procedure, index) => (
+                                <Badge key={index} variant="outline">
+                                  {procedure}
+                                </Badge>
+                              )
+                            ) || "No procedures"}
                           </div>
-                          <DialogFooter>
+                        </TableCell>
+                        <TableCell>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline">View QR</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>
+                                  QR Code for {lock.name}
+                                </DialogTitle>
+                                <DialogDescription>
+                                  Scan this QR code to access the lock.
+                                  <div className="mt-2 text-sm text-muted-foreground">
+                                    Value: {lock.qrCode}
+                                  </div>
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="flex justify-center p-4">
+                                <img
+                                  src={`/api/admin/locks/${lock.id}/qr`}
+                                  alt={`QR code for ${lock.name}`}
+                                  className="w-64 h-64"
+                                />
+                              </div>
+                              <DialogFooter>
+                                <Button
+                                  variant="outline"
+                                  onClick={() =>
+                                    window.open(
+                                      `/api/admin/locks/${lock.id}/qr`,
+                                      "_blank"
+                                    )
+                                  }
+                                >
+                                  Download
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
                             <Button
                               variant="outline"
-                              onClick={() =>
-                                window.open(
-                                  `/api/admin/locks/${lock.id}/qr`,
-                                  "_blank"
-                                )
-                              }
+                              onClick={() => {
+                                setSelectedLock(lock);
+                                setFormData({
+                                  name: lock.name,
+                                  location: lock.location,
+                                  status: lock.status,
+                                  safetyProcedures:
+                                    (lock.safetyProcedures as string[]) || [],
+                                  qrCode: lock.qrCode,
+                                });
+                                setIsDialogOpen(true);
+                              }}
                             >
-                              Download
+                              Edit
                             </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedLock(lock);
-                            setFormData({
-                              name: lock.name,
-                              location: lock.location,
-                              status: lock.status,
-                              safetyProcedures:
-                                (lock.safetyProcedures as string[]) || [],
-                              qrCode: lock.qrCode, // Set current QR code
-                            });
-                            setIsDialogOpen(true);
-                          }}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive">Delete</Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Delete Lock
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this lock?
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(lock.id)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Card view for mobile */}
+              <div className="grid grid-cols-1 gap-4 md:hidden">
+                {locks.map((lock) => (
+                  <Card key={lock.id} className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold">{lock.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {lock.location}
+                          </p>
+                        </div>
+                        <Select
+                          value={lock.status}
+                          onValueChange={(value: Status) =>
+                            handleStatusChange(lock.id, value)
+                          }
                         >
-                          Edit
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive">Delete</Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Lock</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this lock? This
-                                action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(lock.id)}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                          <SelectTrigger className="w-[140px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[
+                              "AVAILABLE",
+                              "IN_USE",
+                              "MAINTENANCE",
+                              "RETIRED",
+                            ].map((status) => (
+                              <SelectItem key={status} value={status}>
+                                <Badge
+                                  variant={getStatusBadgeVariant(
+                                    status as Status
+                                  )}
+                                >
+                                  {status}
+                                </Badge>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </TableCell>
-                  </TableRow>
+
+                      <div>
+                        <p className="text-sm font-medium">Assigned To</p>
+                        <p className="text-sm text-muted-foreground">
+                          {lock.assignedTo
+                            ? `${lock.assignedTo.name || lock.assignedTo.email}`
+                            : "Unassigned"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm font-medium mb-2">
+                          Safety Procedures
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(lock.safetyProcedures as string[] | null)?.map(
+                            (procedure, index) => (
+                              <Badge key={index} variant="outline">
+                                {procedure}
+                              </Badge>
+                            )
+                          ) || "No procedures"}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" className="w-full">
+                              View QR
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>QR Code for {lock.name}</DialogTitle>
+                              <DialogDescription>
+                                Scan this QR code to access the lock.
+                                <div className="mt-2 text-sm text-muted-foreground">
+                                  Value: {lock.qrCode}
+                                </div>
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="flex justify-center p-4">
+                              <img
+                                src={`/api/admin/locks/${lock.id}/qr`}
+                                alt={`QR code for ${lock.name}`}
+                                className="w-64 h-64"
+                              />
+                            </div>
+                            <DialogFooter>
+                              <Button
+                                variant="outline"
+                                onClick={() =>
+                                  window.open(
+                                    `/api/admin/locks/${lock.id}/qr`,
+                                    "_blank"
+                                  )
+                                }
+                              >
+                                Download
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => {
+                              setSelectedLock(lock);
+                              setFormData({
+                                name: lock.name,
+                                location: lock.location,
+                                status: lock.status,
+                                safetyProcedures:
+                                  (lock.safetyProcedures as string[]) || [],
+                                qrCode: lock.qrCode,
+                              });
+                              setIsDialogOpen(true);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" className="flex-1">
+                                Delete
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Lock</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this lock?
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(lock.id)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
