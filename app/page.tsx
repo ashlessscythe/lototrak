@@ -8,16 +8,17 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { siteConfig } from "@/lib/config";
 import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen flex flex-col">
       <SiteHeader />
-      <main className="relative">
+      <main className="flex-1">
         {/* Hero Section */}
-        <section className="container mx-auto px-4 py-24 text-center">
+        <section className="container max-w-screen-2xl mx-auto px-4 py-24 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl mb-4">
             {siteConfig.name}
           </h1>
@@ -46,7 +47,10 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="container mx-auto px-4 py-16">
+        <section
+          id="features"
+          className="container max-w-screen-2xl mx-auto px-4 py-16"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
@@ -99,7 +103,7 @@ export default function Home() {
         {/* Benefits Section */}
         <section
           id="benefits"
-          className="container mx-auto px-4 py-16 bg-muted/50"
+          className="container max-w-screen-2xl mx-auto px-4 py-16 bg-muted/50"
         >
           <h2 className="text-3xl font-bold text-center mb-12">
             Why Choose {siteConfig.name}?
@@ -136,7 +140,7 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="container mx-auto px-4 py-24 text-center">
+        <section className="container max-w-screen-2xl mx-auto px-4 py-24 text-center">
           <h2 className="text-3xl font-bold mb-8">
             Ready to Modernize Your Safety Protocols?
           </h2>
@@ -154,6 +158,7 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <SiteFooter />
     </div>
   );
 }
