@@ -30,6 +30,25 @@ export async function DELETE(
       return new NextResponse("Lock not found", { status: 404 });
     }
 
+    // Check if lock can be deleted
+    if (existingLock.status === "IN_USE") {
+      return new NextResponse("Cannot delete a lock that is currently in use", {
+        status: 400,
+      });
+    }
+
+    if (existingLock.status === "MAINTENANCE") {
+      return new NextResponse("Cannot delete a lock that is in maintenance", {
+        status: 400,
+      });
+    }
+
+    if (existingLock.status === "RETIRED") {
+      return new NextResponse("Cannot delete a lock that is already retired", {
+        status: 400,
+      });
+    }
+
     // Then mark as deleted and create an event
     const [lock, event] = await prisma.$transaction([
       prisma.lock.update({

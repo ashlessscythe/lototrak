@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Menu } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -12,6 +13,13 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { siteConfig } from "@/lib/config";
 import { useSession, signOut } from "next-auth/react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,80 +51,146 @@ export function SiteHeader() {
 
   const isAdminUser = userRole && ["ADMIN", "SUPERVISOR"].includes(userRole);
 
+  const NavigationItems = () => (
+    <>
+      <NavigationMenuItem>
+        <Link href="/" legacyBehavior passHref>
+          <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+            {siteConfig.name}
+          </NavigationMenuLink>
+        </Link>
+      </NavigationMenuItem>
+      {session && userRole !== "PENDING" && (
+        <>
+          <NavigationMenuItem>
+            <Link href="/dashboard" legacyBehavior passHref>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                Dashboard
+              </NavigationMenuLink>
+            </Link>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
+            <Link href="/locks/scan" legacyBehavior passHref>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                Scan Lock
+              </NavigationMenuLink>
+            </Link>
+          </NavigationMenuItem>
+          {isAdminUser && (
+            <>
+              <NavigationMenuItem>
+                <Link href="/admin" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Admin
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/admin/locks" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Locks
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/admin/events" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Events
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+            </>
+          )}
+        </>
+      )}
+    </>
+  );
+
+  const MobileNavigation = () => (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="left" className="w-[80%] sm:w-[350px]">
+        <SheetHeader>
+          <SheetTitle className="text-left">{siteConfig.name}</SheetTitle>
+        </SheetHeader>
+        <nav className="flex flex-col space-y-3 mt-4">
+          <Link href="/" className="text-base font-medium hover:underline">
+            Home
+          </Link>
+          {session && userRole !== "PENDING" && (
+            <>
+              <Link
+                href="/dashboard"
+                className="text-base font-medium hover:underline"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/locks/scan"
+                className="text-base font-medium hover:underline"
+              >
+                Scan Lock
+              </Link>
+              {isAdminUser && (
+                <>
+                  <Link
+                    href="/admin"
+                    className="text-base font-medium hover:underline"
+                  >
+                    Admin
+                  </Link>
+                  <Link
+                    href="/admin/locks"
+                    className="text-base font-medium hover:underline"
+                  >
+                    Locks
+                  </Link>
+                  <Link
+                    href="/admin/events"
+                    className="text-base font-medium hover:underline"
+                  >
+                    Events
+                  </Link>
+                </>
+              )}
+            </>
+          )}
+        </nav>
+      </SheetContent>
+    </Sheet>
+  );
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <NavigationMenu>
-          <NavigationMenuList>
-            <NavigationMenuItem>
-              <Link href="/" legacyBehavior passHref>
-                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                  {siteConfig.name}
-                </NavigationMenuLink>
-              </Link>
-            </NavigationMenuItem>
-            {session && userRole !== "PENDING" && (
-              <>
-                <NavigationMenuItem>
-                  <Link href="/dashboard" legacyBehavior passHref>
-                    <NavigationMenuLink
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      Dashboard
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link href="/locks/scan" legacyBehavior passHref>
-                    <NavigationMenuLink
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      Scan Lock
-                    </NavigationMenuLink>
-                  </Link>
-                </NavigationMenuItem>
-                {isAdminUser && (
-                  <>
-                    <NavigationMenuItem>
-                      <Link href="/admin" legacyBehavior passHref>
-                        <NavigationMenuLink
-                          className={navigationMenuTriggerStyle()}
-                        >
-                          Admin
-                        </NavigationMenuLink>
-                      </Link>
-                    </NavigationMenuItem>
-                    <NavigationMenuItem>
-                      <Link href="/admin/locks" legacyBehavior passHref>
-                        <NavigationMenuLink
-                          className={navigationMenuTriggerStyle()}
-                        >
-                          Locks
-                        </NavigationMenuLink>
-                      </Link>
-                    </NavigationMenuItem>
-                    <NavigationMenuItem>
-                      <Link href="/admin/events" legacyBehavior passHref>
-                        <NavigationMenuLink
-                          className={navigationMenuTriggerStyle()}
-                        >
-                          Events
-                        </NavigationMenuLink>
-                      </Link>
-                    </NavigationMenuItem>
-                  </>
-                )}
-              </>
-            )}
-          </NavigationMenuList>
-        </NavigationMenu>
-        <div className="flex items-center gap-4">
+      <div className="container flex h-14 md:h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <MobileNavigation />
+          <NavigationMenu className="hidden md:flex">
+            <NavigationMenuList>
+              <NavigationItems />
+            </NavigationMenuList>
+          </NavigationMenu>
+          <Link href="/" className="md:hidden font-semibold">
+            {siteConfig.name}
+          </Link>
+        </div>
+        <div className="flex items-center gap-2 md:gap-4">
           <ThemeToggle />
           {session ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  {session.user.email}
+                <Button
+                  variant="outline"
+                  className="gap-2 h-9 px-2 md:h-10 md:px-4"
+                >
+                  <span className="max-w-[80px] md:max-w-[150px] truncate">
+                    {session.user.email}
+                  </span>
                   {userRole && (
                     <span className={`text-xs ${getRoleColor(userRole)}`}>
                       ({userRole})
@@ -171,11 +245,18 @@ export function SiteHeader() {
             </DropdownMenu>
           ) : (
             <>
-              <Button variant="outline" asChild>
+              <Button
+                variant="outline"
+                asChild
+                className="hidden sm:inline-flex"
+              >
                 <Link href="/auth/signin">Sign In</Link>
               </Button>
-              <Button asChild>
-                <Link href="/auth/signup">Get Started</Link>
+              <Button asChild className="h-9 px-3 md:h-10 md:px-4">
+                <Link href="/auth/signup">
+                  <span className="sm:hidden">Sign Up</span>
+                  <span className="hidden sm:inline">Get Started</span>
+                </Link>
               </Button>
             </>
           )}

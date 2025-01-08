@@ -150,14 +150,6 @@ export async function PUT(req: Request) {
       });
     }
 
-    // If QR code is provided, validate its format
-    if (qrCode && !isValidQRCode(qrCode)) {
-      return new NextResponse(
-        "Invalid QR code format. Must be 4-16 alphanumeric characters, underscores, or hyphens.",
-        { status: 400 }
-      );
-    }
-
     // Check if lock exists and is not deleted
     const existingLock = await prisma.lock.findFirst({
       where: {
@@ -172,8 +164,19 @@ export async function PUT(req: Request) {
       });
     }
 
-    // If QR code is being changed, check if it's already in use
-    if (qrCode) {
+    // Only validate and check QR code if it's different from existing
+    const isQrCodeChanging = qrCode && qrCode !== existingLock.qrCode;
+
+    if (isQrCodeChanging) {
+      // Validate new QR code format
+      if (!isValidQRCode(qrCode)) {
+        return new NextResponse(
+          "Invalid QR code format. Must be 4-16 alphanumeric characters, underscores, or hyphens.",
+          { status: 400 }
+        );
+      }
+
+      // Check if new QR code is already in use
       const existingQRLock = await prisma.lock.findFirst({
         where: {
           qrCode: qrCode,
@@ -192,7 +195,7 @@ export async function PUT(req: Request) {
         name,
         location,
         status: status as Status,
-        qrCode: qrCode || undefined, // Only update if provided
+        qrCode: isQrCodeChanging ? qrCode : undefined, // Only update if explicitly changed
         safetyProcedures: safetyProcedures as string[],
       },
     });

@@ -164,9 +164,9 @@ export default function ScanPage() {
 
   if (isLoading && !lockDetails) {
     return (
-      <div className="container mx-auto py-10">
+      <div className="container mx-auto p-4 sm:py-10">
         <Card>
-          <CardContent className="py-10">
+          <CardContent className="p-6 sm:py-10">
             <div className="flex flex-col items-center justify-center gap-4">
               <Loader2 className="h-8 w-8 animate-spin" />
               <p className="text-sm text-muted-foreground">
@@ -180,8 +180,8 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="container mx-auto py-10 space-y-6">
-      <Card>
+    <div className="container mx-auto p-4 sm:py-10 space-y-4 sm:space-y-6">
+      <Card className="w-full max-w-lg mx-auto">
         <CardHeader>
           <CardTitle>Scan Lock QR Code</CardTitle>
           <CardDescription>
@@ -201,7 +201,7 @@ export default function ScanPage() {
                 onScanSuccess={handleScanSuccess}
                 onScanError={handleScanError}
               />
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-sm sm:text-base text-muted-foreground text-center px-4">
                 Position the QR code within the camera frame or upload an image
               </p>
             </div>
@@ -219,12 +219,14 @@ export default function ScanPage() {
 
               {lockDetails.status === "AVAILABLE" && (
                 <div className="space-y-4">
-                  <h4 className="font-medium">Safety Procedures</h4>
-                  <div className="space-y-2">
+                  <h4 className="font-medium text-base sm:text-lg">
+                    Safety Procedures
+                  </h4>
+                  <div className="space-y-3 sm:space-y-2">
                     {lockDetails.safetyProcedures.map((procedure) => (
                       <div
                         key={procedure}
-                        className="flex items-center space-x-2"
+                        className="flex items-center space-x-3 sm:space-x-2 py-1 sm:py-0"
                       >
                         <Checkbox
                           id={procedure}
@@ -236,7 +238,7 @@ export default function ScanPage() {
                         />
                         <label
                           htmlFor={procedure}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          className="text-sm sm:text-base font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                         >
                           {procedure}
                         </label>

@@ -136,7 +136,10 @@ export default function LocksPage() {
         return;
       }
 
-      if (!response.ok) throw new Error("Failed to save lock");
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to save lock");
+      }
 
       toast({
         title: "Success",
@@ -150,7 +153,8 @@ export default function LocksPage() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to save lock",
+        description:
+          error instanceof Error ? error.message : "Failed to save lock",
         variant: "destructive",
       });
     } finally {
