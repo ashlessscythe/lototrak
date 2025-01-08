@@ -24,13 +24,23 @@ export default function Home() {
           <p className="text-xl text-muted-foreground mb-8">
             Modernizing Safety Protocols for the Digital Age
           </p>
-          <div className="flex justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link href="/auth/signup">Get Started</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="#features">Learn More</Link>
-            </Button>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex justify-center gap-4">
+              <Button size="lg" asChild>
+                <Link href="/auth/signup">Get Started</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="#features">Learn More</Link>
+              </Button>
+            </div>
+            <div className="flex gap-4 mt-4">
+              <Button variant="link" asChild>
+                <Link href="/guide">User Guide</Link>
+              </Button>
+              <Button variant="link" asChild>
+                <Link href="/faq">FAQ</Link>
+              </Button>
+            </div>
           </div>
           <Separator className="my-8" />
         </section>
