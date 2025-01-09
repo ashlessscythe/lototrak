@@ -1,8 +1,14 @@
 import { PrismaClient, Role, Status, EventType } from "@prisma/client";
 import { hash } from "bcrypt";
 import { faker } from "@faker-js/faker";
+import { nanoid } from "nanoid";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
+
+// Helper to generate a QR code
+const generateQRCode = (length: number = 14) => {
+  return nanoid(length);
+};
 
 const prisma = new PrismaClient();
 
@@ -33,7 +39,7 @@ async function createLockWithEvents(userId: string) {
       name: `Lock ${faker.number.int({ min: 1000, max: 9999 })}`, // Random lock identifier
       location: location, // Warehouse-oriented location
       status: Status.AVAILABLE,
-      qrCode: faker.string.uuid(),
+      qrCode: generateQRCode(),
       userId,
       events: {
         create: [

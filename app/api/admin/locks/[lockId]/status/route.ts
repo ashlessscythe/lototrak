@@ -64,7 +64,8 @@ export async function PUT(
       prisma.event.create({
         data: {
           type: "STATUS_CHANGED",
-          details: `Status changed from ${existingLock.status} to ${status} at location: ${existingLock.location}`,
+          details: `Status changed from ${existingLock.status} to ${status}`,
+          location: existingLock.location,
           lockId,
           userId: session.user.id,
         },

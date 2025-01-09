@@ -11,10 +11,9 @@ const isValidQRCode = (code: string) => {
   return /^[a-zA-Z0-9_-]{4,16}$/.test(code);
 };
 
-// Helper to generate a short, readable QR code
-const generateQRCode = () => {
-  // Generate a 6-character code for better readability
-  return nanoid(6);
+// Helper to generate a QR code
+const generateQRCode = (length: number = 14) => {
+  return nanoid(length);
 };
 
 export async function GET() {
@@ -164,12 +163,13 @@ export async function PUT(req: Request) {
       });
     }
 
-    // Only validate and check QR code if it's different from existing
-    const isQrCodeChanging = qrCode && qrCode !== existingLock.qrCode;
+    // Generate new QR code if empty, or validate provided one
+    const finalQrCode = !qrCode ? generateQRCode() : qrCode;
+    const isQrCodeChanging = finalQrCode !== existingLock.qrCode;
 
     if (isQrCodeChanging) {
       // Validate new QR code format
-      if (!isValidQRCode(qrCode)) {
+      if (!isValidQRCode(finalQrCode)) {
         return new NextResponse(
           "Invalid QR code format. Must be 4-16 alphanumeric characters, underscores, or hyphens.",
           { status: 400 }
@@ -179,7 +179,7 @@ export async function PUT(req: Request) {
       // Check if new QR code is already in use
       const existingQRLock = await prisma.lock.findFirst({
         where: {
-          qrCode: qrCode,
+          qrCode: finalQrCode,
           id: { not: id },
         },
       });
@@ -195,7 +195,7 @@ export async function PUT(req: Request) {
         name,
         location,
         status: status as Status,
-        qrCode: isQrCodeChanging ? qrCode : undefined, // Only update if explicitly changed
+        qrCode: isQrCodeChanging ? finalQrCode : undefined, // Only update if changed
         safetyProcedures: safetyProcedures as string[],
       },
     });
