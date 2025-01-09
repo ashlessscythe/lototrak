@@ -12,6 +12,25 @@ const generateQRCode = (length: number = 14) => {
 
 const prisma = new PrismaClient();
 
+// Common warehouse safety procedures
+const safetyProceduresList = [
+  "Wear safety vest at all times",
+  "Check surroundings before operating equipment",
+  "Maintain 3 points of contact on ladders",
+  "Keep fire exits clear",
+  "Report any spills immediately",
+  "Use proper lifting techniques",
+  "Wear steel-toed boots",
+  "Follow lockout/tagout procedures",
+  "Keep aisles clear of obstructions",
+  "Use handrails on stairs",
+  "Inspect equipment before use",
+  "Maintain safe distance from moving vehicles",
+  "Use proper PPE when handling chemicals",
+  "Report any safety concerns to supervisor",
+  "Follow speed limit guidelines",
+];
+
 async function createLockWithEvents(userId: string) {
   const warehouseLocations = [
     "Staging Lane",
@@ -34,12 +53,25 @@ async function createLockWithEvents(userId: string) {
   // get loc for use below
   const location = generateLocation();
 
+  // Generate random status
+  const status = faker.helpers.arrayElement([
+    Status.AVAILABLE,
+    Status.IN_USE,
+    Status.MAINTENANCE,
+    Status.RETIRED,
+  ]);
+
   const lock = await prisma.lock.create({
     data: {
       name: `Lock ${faker.number.int({ min: 1000, max: 9999 })}`, // Random lock identifier
       location: location, // Warehouse-oriented location
-      status: Status.AVAILABLE,
+      status,
       qrCode: generateQRCode(),
+      // Randomly select 3-5 safety procedures
+      safetyProcedures: faker.helpers.arrayElements(
+        safetyProceduresList,
+        faker.number.int({ min: 3, max: 5 })
+      ),
       userId,
       events: {
         create: [
@@ -52,7 +84,7 @@ async function createLockWithEvents(userId: string) {
           {
             type: EventType.STATUS_CHANGED,
             location: location,
-            details: "Lock set to available",
+            details: `Lock status set to ${status}`,
             userId,
           },
         ],
