@@ -454,7 +454,7 @@ export default function LocksPage() {
                             <SelectTrigger className="w-full max-w-[200px] mx-auto">
                               <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-background text-foreground border border-border shadow-sm rounded-sm">
                               {[
                                 "AVAILABLE",
                                 "IN_USE",
@@ -606,7 +606,7 @@ export default function LocksPage() {
                           <SelectTrigger className="w-[140px]">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="border border-border text-foreground bg-background shadow-lg rounded-md">
                             {[
                               "AVAILABLE",
                               "IN_USE",
