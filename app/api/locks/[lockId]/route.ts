@@ -26,6 +26,18 @@ export async function GET(
             email: true,
           },
         },
+        events: {
+          select: {
+            id: true,
+            type: true,
+            details: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 3,
+        },
       },
     });
 
@@ -40,6 +52,18 @@ export async function GET(
               name: true,
               email: true,
             },
+          },
+          events: {
+            select: {
+              id: true,
+              type: true,
+              details: true,
+              createdAt: true,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+            take: 3,
           },
         },
       });

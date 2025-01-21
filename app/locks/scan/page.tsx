@@ -13,12 +13,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Lock } from "@/lib/types";
+import { Lock, EventType } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 
-interface LockDetails extends Lock {
+interface LockDetails extends Omit<Lock, "createdAt" | "updatedAt"> {
   safetyProcedures: string[];
+  assignedTo?: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
+  events?: Array<{
+    id: string;
+    type: EventType;
+    details: string;
+    createdAt: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function ScanPage() {
@@ -208,13 +221,67 @@ export default function ScanPage() {
           ) : (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold">{lockDetails.name}</h3>
-                <p className="text-sm text-muted-foreground">
-                  Location: {lockDetails.location}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Status: {lockDetails.status}
-                </p>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">{lockDetails.name}</h3>
+
+                  {/* Core Details */}
+                  <div className="grid gap-1">
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        Location:
+                      </span>{" "}
+                      {lockDetails.location}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        Status:
+                      </span>{" "}
+                      {lockDetails.status}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        Last Updated:
+                      </span>{" "}
+                      {new Date(lockDetails.updatedAt).toLocaleString()}
+                    </p>
+                  </div>
+
+                  {/* Assignment Info */}
+                  {lockDetails.assignedTo && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-semibold mb-1">
+                        Currently Assigned To:
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {lockDetails.assignedTo.name ||
+                          lockDetails.assignedTo.email}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Recent Events */}
+                  {lockDetails.events && lockDetails.events.length > 0 && (
+                    <div className="mt-4">
+                      <h4 className="text-sm font-semibold mb-1">
+                        Recent Activity:
+                      </h4>
+                      <div className="space-y-1">
+                        {lockDetails.events.slice(0, 3).map((event) => (
+                          <p
+                            key={event.id}
+                            className="text-sm text-muted-foreground"
+                          >
+                            <span className="font-medium text-foreground">
+                              {event.type.replace(/_/g, " ").toLowerCase()}
+                            </span>{" "}
+                            - {event.details} -{" "}
+                            {new Date(event.createdAt).toLocaleString()}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {lockDetails.status === "AVAILABLE" && (
