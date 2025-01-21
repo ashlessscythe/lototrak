@@ -46,13 +46,16 @@ export async function POST(
       },
     });
 
-    // Create release event
+    // Create release event with lock information
     await prisma.event.create({
       data: {
         type: EventType.LOCK_RELEASED,
         details: "Lock released",
         lockId: lockId,
         userId: session.user.id,
+        location: lock.location,
+        lockName: lock.name,
+        lockStatus: Status.AVAILABLE, // Store the new status
       },
     });
 

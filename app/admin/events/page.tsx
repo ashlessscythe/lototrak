@@ -1,4 +1,8 @@
 import { getServerSession } from "next-auth";
+
+// Mark page as dynamic
+export const dynamic = "force-dynamic";
+
 import { redirect } from "next/navigation";
 import { authOptions } from "@/app/auth";
 import { prisma } from "@/lib/prisma";
@@ -23,13 +27,6 @@ export default async function EventsPage() {
   try {
     const events = await prisma.event.findMany({
       include: {
-        lock: {
-          select: {
-            id: true,
-            name: true,
-            location: true,
-          },
-        },
         user: {
           select: {
             id: true,
@@ -57,6 +54,7 @@ export default async function EventsPage() {
                 <TableHead>Details</TableHead>
                 <TableHead>Lock</TableHead>
                 <TableHead>Location</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Date</TableHead>
               </TableRow>
@@ -68,16 +66,9 @@ export default async function EventsPage() {
                     {event.type.replace(/_/g, " ")}
                   </TableCell>
                   <TableCell>{event.details}</TableCell>
-                  <TableCell>
-                    {event.lockId
-                      ? event.lock?.name || "Deleted Lock"
-                      : "Lock Removed"}
-                  </TableCell>
-                  <TableCell>
-                    {event.location ||
-                      event.lock?.location ||
-                      "Location Unknown"}
-                  </TableCell>
+                  <TableCell>{event.lockName || "Lock Removed"}</TableCell>
+                  <TableCell>{event.location || "Location Unknown"}</TableCell>
+                  <TableCell>{event.lockStatus || "Unknown"}</TableCell>
                   <TableCell>
                     {event.user?.name || event.user?.email || "Deleted User"}
                   </TableCell>
@@ -94,7 +85,7 @@ export default async function EventsPage() {
               ))}
               {events.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4">
+                  <TableCell colSpan={7} className="text-center py-4">
                     No events found
                   </TableCell>
                 </TableRow>

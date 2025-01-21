@@ -63,6 +63,8 @@ export async function DELETE(
         data: {
           type: "MAINTENANCE",
           details: "Lock marked as deleted",
+          lockName: existingLock.name,
+          lockStatus: existingLock.status,
           location: existingLock.location,
           lockId: lockId,
           userId: session.user.id,

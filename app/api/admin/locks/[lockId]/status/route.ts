@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@/lib/types";
 import { authOptions } from "@/app/auth";
-import { Prisma } from "@prisma/client";
+import { Prisma, EventType } from "@prisma/client";
 
 export async function PUT(
   req: Request,
@@ -63,11 +63,13 @@ export async function PUT(
       }),
       prisma.event.create({
         data: {
-          type: "STATUS_CHANGED",
+          type: EventType.STATUS_CHANGED,
           details: `Status changed from ${existingLock.status} to ${status}`,
           location: existingLock.location,
           lockId,
           userId: session.user.id,
+          lockName: existingLock.name,
+          lockStatus: status as Status,
         },
       }),
     ]);

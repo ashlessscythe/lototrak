@@ -61,35 +61,46 @@ async function createLockWithEvents(userId: string) {
     Status.RETIRED,
   ]);
 
+  // Generate lock name once to use consistently
+  const lockName = `Lock ${faker.number.int({ min: 1000, max: 9999 })}`;
+
+  // Create the lock first
   const lock = await prisma.lock.create({
     data: {
-      name: `Lock ${faker.number.int({ min: 1000, max: 9999 })}`, // Random lock identifier
-      location: location, // Warehouse-oriented location
+      name: lockName,
+      location: location,
       status,
       qrCode: generateQRCode(),
-      // Randomly select 3-5 safety procedures
       safetyProcedures: faker.helpers.arrayElements(
         safetyProceduresList,
         faker.number.int({ min: 3, max: 5 })
       ),
       userId,
-      events: {
-        create: [
-          {
-            type: EventType.LOCK_ASSIGNED,
-            details: "Lock initially assigned",
-            location: location,
-            userId,
-          },
-          {
-            type: EventType.STATUS_CHANGED,
-            location: location,
-            details: `Lock status set to ${status}`,
-            userId,
-          },
-        ],
-      },
     },
+  });
+
+  // Create events separately
+  await prisma.event.createMany({
+    data: [
+      {
+        type: EventType.LOCK_ASSIGNED,
+        details: "Lock initially assigned",
+        location: location,
+        userId,
+        lockName: lockName,
+        lockStatus: status,
+        lockId: lock.id,
+      },
+      {
+        type: EventType.STATUS_CHANGED,
+        location: location,
+        details: `Lock status set to ${status}`,
+        userId,
+        lockName: lockName,
+        lockStatus: status,
+        lockId: lock.id,
+      },
+    ],
   });
   return lock;
 }

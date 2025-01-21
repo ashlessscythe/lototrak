@@ -89,7 +89,7 @@ export async function POST(
       },
     });
 
-    // Create assignment event with safety checks
+    // Create assignment event with safety checks and lock information
     await prisma.event.create({
       data: {
         type: EventType.LOCK_ASSIGNED,
@@ -97,6 +97,9 @@ export async function POST(
         safetyChecks: safetyChecks,
         lockId: lock.id,
         userId: session.user.id,
+        location: lock.location,
+        lockName: lock.name,
+        lockStatus: Status.IN_USE, // Store the new status
       },
     });
 

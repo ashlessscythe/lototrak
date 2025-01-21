@@ -17,6 +17,13 @@ import { Lock, EventType } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 
+interface Event {
+  id: string;
+  type: EventType;
+  details: string;
+  createdAt: string;
+}
+
 interface LockDetails extends Omit<Lock, "createdAt" | "updatedAt"> {
   safetyProcedures: string[];
   assignedTo?: {
@@ -24,12 +31,7 @@ interface LockDetails extends Omit<Lock, "createdAt" | "updatedAt"> {
     name: string | null;
     email: string;
   } | null;
-  events?: Array<{
-    id: string;
-    type: EventType;
-    details: string;
-    createdAt: string;
-  }>;
+  events?: Event[];
   createdAt: string;
   updatedAt: string;
 }
@@ -62,7 +64,14 @@ export default function ScanPage() {
 
       const lock = await response.json();
       console.log("Fetched lock details:", lock);
-      setLockDetails(lock);
+
+      // Fetch recent events separately
+      const eventsResponse = await fetch(
+        `/api/events?lockId=${lockId}&limit=3`
+      );
+      const events = eventsResponse.ok ? await eventsResponse.json() : [];
+
+      setLockDetails({ ...lock, events });
       setCompletedChecks([]);
 
       toast({
