@@ -22,16 +22,31 @@ export async function GET(req: Request) {
     }
 
     const events = await prisma.event.findMany({
-      where: { lockId },
+      where: {
+        lockId,
+        // Don't filter by userId since we want to see all events for the lock
+      },
       orderBy: { createdAt: "desc" },
       take: limit,
       select: {
         id: true,
         type: true,
         details: true,
+        location: true,
+        lockName: true,
+        lockStatus: true,
+        safetyChecks: true,
         createdAt: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
       },
     });
+
+    console.log("[EVENTS_GET] Found events:", events); // Debug log
 
     return NextResponse.json(events);
   } catch (error) {

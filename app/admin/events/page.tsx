@@ -1,10 +1,15 @@
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { DateCell } from "@/components/date-cell";
+import { authOptions } from "@/app/auth";
+import {
+  formatDateWithSettings,
+  formatRelativeTimeWithSettings,
+} from "@/lib/utils";
 
 // Mark page as dynamic
 export const dynamic = "force-dynamic";
 
-import { redirect } from "next/navigation";
-import { authOptions } from "@/app/auth";
 import { prisma } from "@/lib/prisma";
 import {
   Table,
@@ -20,25 +25,35 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 export default async function EventsPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !["SUPERVISOR", "ADMIN"].includes(session.user.role)) {
     redirect("/auth/signin");
   }
 
   try {
-    const events = await prisma.event.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
+    // Fetch events and settings in parallel
+    const [events, settings] = await Promise.all([
+      prisma.event.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+        orderBy: {
+          createdAt: "desc",
+        },
+      }),
+      prisma.systemSettings.findMany(),
+    ]);
+
+    // Convert settings array to object
+    const settingsMap = settings.reduce((acc, setting) => {
+      acc[setting.key] = setting.value;
+      return acc;
+    }, {} as Record<string, string>);
 
     return (
       <div className="container mx-auto py-10">
@@ -73,13 +88,18 @@ export default async function EventsPage() {
                     {event.user?.name || event.user?.email || "Deleted User"}
                   </TableCell>
                   <TableCell>
-                    {new Date(event.createdAt).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    <DateCell
+                      date={event.createdAt}
+                      settings={settingsMap}
+                      formattedDate={formatDateWithSettings(
+                        event.createdAt,
+                        settingsMap
+                      )}
+                      relativeTime={formatRelativeTimeWithSettings(
+                        event.createdAt,
+                        settingsMap
+                      )}
+                    />
                   </TableCell>
                 </TableRow>
               ))}

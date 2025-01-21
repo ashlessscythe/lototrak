@@ -99,6 +99,13 @@ export function SiteHeader() {
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/admin/settings" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Settings
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
             </>
           )}
         </>
@@ -155,6 +162,12 @@ export function SiteHeader() {
                     className="text-base font-medium hover:underline"
                   >
                     Events
+                  </Link>
+                  <Link
+                    href="/admin/settings"
+                    className="text-base font-medium hover:underline"
+                  >
+                    Settings
                   </Link>
                 </>
               )}
@@ -229,6 +242,9 @@ export function SiteHeader() {
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/admin/events">View Events</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/settings">System Settings</Link>
                         </DropdownMenuItem>
                       </>
                     )}

@@ -13,15 +13,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Lock, EventType } from "@/lib/types";
+import { Lock, EventType, Status } from "@/lib/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { DateCell } from "@/components/date-cell";
 
 interface Event {
   id: string;
   type: EventType;
   details: string;
+  location: string;
+  lockName: string;
+  lockStatus: Status;
+  safetyChecks?: any;
   createdAt: string;
+  user: {
+    name: string | null;
+    email: string;
+  };
 }
 
 interface LockDetails extends Omit<Lock, "createdAt" | "updatedAt"> {
@@ -49,7 +58,9 @@ export default function ScanPage() {
     setError(null);
     try {
       console.log("Scanned lock ID:", lockId);
-      const response = await fetch(`/api/locks/${lockId}`);
+      const response = await fetch(`/api/locks/${lockId}`, {
+        credentials: "include", // Include session cookie
+      });
 
       if (response.status === 404) {
         throw new Error("Invalid QR code. Lock not found in the system.");
@@ -67,9 +78,19 @@ export default function ScanPage() {
 
       // Fetch recent events separately
       const eventsResponse = await fetch(
-        `/api/events?lockId=${lockId}&limit=3`
+        `/api/events?lockId=${lockId}&limit=3`,
+        {
+          credentials: "include", // Include session cookie
+        }
       );
+
+      if (!eventsResponse.ok) {
+        console.error("Failed to fetch events:", await eventsResponse.text());
+        // Still continue since events are optional
+      }
+
       const events = eventsResponse.ok ? await eventsResponse.json() : [];
+      console.log("Fetched events:", events);
 
       setLockDetails({ ...lock, events });
       setCompletedChecks([]);
@@ -117,6 +138,7 @@ export default function ScanPage() {
     try {
       const response = await fetch(`/api/locks/${lockDetails.id}/assign`, {
         method: "POST",
+        credentials: "include", // Include session cookie
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ safetyChecks: completedChecks }),
       });
@@ -154,6 +176,7 @@ export default function ScanPage() {
     try {
       const response = await fetch(`/api/locks/${lockDetails.id}/release`, {
         method: "POST",
+        credentials: "include", // Include session cookie
       });
 
       if (!response.ok) {
@@ -251,7 +274,7 @@ export default function ScanPage() {
                       <span className="font-medium text-foreground">
                         Last Updated:
                       </span>{" "}
-                      {new Date(lockDetails.updatedAt).toLocaleString()}
+                      {new Date(lockDetails.updatedAt).toDateString()}
                     </p>
                   </div>
 
@@ -282,8 +305,16 @@ export default function ScanPage() {
                           >
                             <span className="font-medium text-foreground">
                               {event.type.replace(/_/g, " ").toLowerCase()}
-                            </span>{" "}
-                            - {event.details} -{" "}
+                            </span>
+                            {" - "}
+                            {event.details}
+                            {" by "}
+                            <span className="font-medium">
+                              {event.user.name || event.user.email}
+                            </span>
+                            {" at "}
+                            {event.location}
+                            {" - "}
                             {new Date(event.createdAt).toLocaleString()}
                           </p>
                         ))}
