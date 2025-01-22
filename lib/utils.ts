@@ -7,6 +7,7 @@ export function cn(...inputs: ClassValue[]) {
 
 // Helper to get absolute URL for API calls
 function getApiUrl(path: string) {
+  const sanitizedPath = path.startsWith("/") ? path : `/${path}`;
   // Check if we're in the browser
   if (typeof window !== "undefined") {
     return `${window.location.origin}${path}`;
@@ -14,7 +15,7 @@ function getApiUrl(path: string) {
   // Server-side, use environment variable or default
   return `${
     process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-  }${path}`;
+  }${sanitizedPath}`;
 }
 
 // Get system settings from API
@@ -27,7 +28,7 @@ export async function getSystemSettings() {
     return await response.json();
   } catch (error) {
     console.error("Error fetching settings:", error);
-    return {}; // Return empty object as fallback
+    return { timezone: "UTC" }; // Return utc as fallback
   }
 }
 
@@ -50,7 +51,14 @@ export function formatDateWithSettings(
     ...format,
   };
 
-  return new Intl.DateTimeFormat("en-US", defaultFormat).format(new Date(date));
+  try {
+    return new Intl.DateTimeFormat("en-US", defaultFormat).format(
+      new Date(date)
+    );
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Invalid Date";
+  }
 }
 
 // Format a date relative to now (e.g. "2 hours ago")
@@ -61,24 +69,33 @@ export function formatRelativeTimeWithSettings(
   const timezone =
     settings.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-  const now = new Date();
-  const then = new Date(date);
+  try {
+    const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+    const now = new Date();
+    const then = new Date(date);
 
-  // Convert both dates to the system timezone
-  const nowTz = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
-  const thenTz = new Date(then.toLocaleString("en-US", { timeZone: timezone }));
+    // Convert both dates to the system timezone
+    const nowTz = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
+    const thenTz = new Date(
+      then.toLocaleString("en-US", { timeZone: timezone })
+    );
 
-  const diffInSeconds = Math.floor((nowTz.getTime() - thenTz.getTime()) / 1000);
+    const diffInSeconds = Math.floor(
+      (nowTz.getTime() - thenTz.getTime()) / 1000
+    );
 
-  if (diffInSeconds < 60) return formatter.format(-diffInSeconds, "seconds");
-  if (diffInSeconds < 3600)
-    return formatter.format(-Math.floor(diffInSeconds / 60), "minutes");
-  if (diffInSeconds < 86400)
-    return formatter.format(-Math.floor(diffInSeconds / 3600), "hours");
-  if (diffInSeconds < 2592000)
-    return formatter.format(-Math.floor(diffInSeconds / 86400), "days");
-  if (diffInSeconds < 31536000)
-    return formatter.format(-Math.floor(diffInSeconds / 2592000), "months");
-  return formatter.format(-Math.floor(diffInSeconds / 31536000), "years");
+    if (diffInSeconds < 60) return formatter.format(-diffInSeconds, "seconds");
+    if (diffInSeconds < 3600)
+      return formatter.format(-Math.floor(diffInSeconds / 60), "minutes");
+    if (diffInSeconds < 86400)
+      return formatter.format(-Math.floor(diffInSeconds / 3600), "hours");
+    if (diffInSeconds < 2592000)
+      return formatter.format(-Math.floor(diffInSeconds / 86400), "days");
+    if (diffInSeconds < 31536000)
+      return formatter.format(-Math.floor(diffInSeconds / 2592000), "months");
+    return formatter.format(-Math.floor(diffInSeconds / 31536000), "years");
+  } catch (error) {
+    console.error("Error formatting relative time:", error);
+    return "Unknown time";
+  }
 }
