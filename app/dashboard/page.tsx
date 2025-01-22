@@ -62,15 +62,20 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <Button className="w-full">
-                    <Link href="/admin/locks">View Locks</Link>
-                  </Button>
-                  <Button className="w-full" variant="outline">
-                    View Events
+                    <Link href="/locks/scan">Scan Lock</Link>
                   </Button>
                   {isAdminUser && (
-                    <Button className="w-full" variant="secondary" asChild>
-                      <Link href="/admin/users">Manage Users</Link>
-                    </Button>
+                    <>
+                      <Button className="w-full" variant="outline">
+                        <Link href="/admin/events">View Events</Link>
+                      </Button>
+                      <Button className="w-full" variant="secondary" asChild>
+                        <Link href="/admin/users">Manage Users</Link>
+                      </Button>
+                      <Button className="w-full" variant="outline">
+                        <Link href="/admin/locks">View Locks</Link>
+                      </Button>
+                    </>
                   )}
                 </CardContent>
               </Card>

@@ -117,6 +117,61 @@ export default function LocksPage() {
     setIsLoading(true);
 
     try {
+      // If editing, register events for changes
+      if (selectedLock) {
+        const changes = [];
+
+        if (selectedLock.status !== formData.status) {
+          changes.push({
+            type: "STATUS_CHANGED",
+            details: `Status changed from ${selectedLock.status} to ${formData.status}`,
+          });
+        }
+
+        if (selectedLock.name !== formData.name) {
+          changes.push({
+            type: "MAINTENANCE",
+            details: `Name changed from "${selectedLock.name}" to "${formData.name}"`,
+          });
+        }
+
+        if (selectedLock.location !== formData.location) {
+          changes.push({
+            type: "MAINTENANCE",
+            details: `Location changed from "${selectedLock.location}" to "${formData.location}"`,
+          });
+        }
+
+        // Compare safety procedures
+        const oldProcedures = (selectedLock.safetyProcedures as string[]) || [];
+        if (
+          JSON.stringify(oldProcedures) !==
+          JSON.stringify(formData.safetyProcedures)
+        ) {
+          changes.push({
+            type: "SAFETY_CHECK_COMPLETED",
+            details: `Safety procedures updated from [${oldProcedures.join(
+              ", "
+            )}] to [${formData.safetyProcedures.join(", ")}]`,
+          });
+        }
+
+        // Register all events
+        for (const change of changes) {
+          await fetch("/api/events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...change,
+              location: formData.location,
+              lockName: formData.name,
+              lockStatus: formData.status,
+              lockId: selectedLock.id,
+            }),
+          });
+        }
+      }
+
       const response = await fetch("/api/admin/locks", {
         method: selectedLock ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -205,6 +260,24 @@ export default function LocksPage() {
     setIsLoading(true);
 
     try {
+      // Find the lock to get its current details
+      const lock = locks.find((l) => l.id === id);
+      if (!lock) throw new Error("Lock not found");
+
+      // Register status change event
+      await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "STATUS_CHANGED",
+          details: `Status changed from ${lock.status} to ${status}`,
+          location: lock.location,
+          lockName: lock.name,
+          lockStatus: status,
+          lockId: id,
+        }),
+      });
+
       const response = await fetch(`/api/admin/locks/${id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -490,10 +563,12 @@ export default function LocksPage() {
                                 <DialogTitle>
                                   QR Code for {lock.name}
                                 </DialogTitle>
-                                <DialogDescription>
-                                  Scan this QR code to access the lock.
-                                  <div className="mt-2 text-sm text-muted-foreground">
-                                    Value: {lock.qrCode}
+                                <DialogDescription asChild>
+                                  <div>
+                                    <p>Scan this QR code to access the lock.</p>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                      Value: {lock.qrCode}
+                                    </p>
                                   </div>
                                 </DialogDescription>
                               </DialogHeader>
@@ -630,10 +705,12 @@ export default function LocksPage() {
                           <DialogContent>
                             <DialogHeader>
                               <DialogTitle>QR Code for {lock.name}</DialogTitle>
-                              <DialogDescription>
-                                Scan this QR code to access the lock.
-                                <div className="mt-2 text-sm text-muted-foreground">
-                                  Value: {lock.qrCode}
+                              <DialogDescription asChild>
+                                <div>
+                                  <p>Scan this QR code to access the lock.</p>
+                                  <p className="mt-2 text-sm text-muted-foreground">
+                                    Value: {lock.qrCode}
+                                  </p>
                                 </div>
                               </DialogDescription>
                             </DialogHeader>

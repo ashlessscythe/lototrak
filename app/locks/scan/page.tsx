@@ -50,6 +50,7 @@ export default function ScanPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completedChecks, setCompletedChecks] = useState<string[]>([]);
+  const [clearLockAfterRelease, setClearLockAfterRelease] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -168,6 +169,42 @@ export default function ScanPage() {
     }
   };
 
+  const handleReset = async () => {
+    if (!lockDetails) return;
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/locks/${lockDetails.id}/reset`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+
+      toast({
+        title: "Success",
+        description: "Lock reset successfully",
+      });
+
+      router.push("/dashboard");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to reset lock";
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleRelease = async () => {
     if (!lockDetails) return;
 
@@ -176,7 +213,7 @@ export default function ScanPage() {
     try {
       const response = await fetch(`/api/locks/${lockDetails.id}/release`, {
         method: "POST",
-        credentials: "include", // Include session cookie
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -189,7 +226,12 @@ export default function ScanPage() {
         description: "Lock released successfully",
       });
 
-      router.push("/dashboard");
+      // If clearLockAfterRelease is checked, call reset endpoint
+      if (clearLockAfterRelease) {
+        await handleReset();
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to release lock";
@@ -215,7 +257,7 @@ export default function ScanPage() {
             <div className="flex flex-col items-center justify-center gap-4">
               <Loader2 className="h-8 w-8 animate-spin" />
               <p className="text-sm text-muted-foreground">
-                Processing QR code...
+                Processing QR code...me
               </p>
             </div>
           </CardContent>
@@ -371,21 +413,56 @@ export default function ScanPage() {
               )}
 
               {lockDetails.status === "IN_USE" && (
-                <Button
-                  onClick={handleRelease}
-                  disabled={isLoading}
-                  className="w-full"
-                  variant="destructive"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Releasing...
-                    </>
-                  ) : (
-                    "Release Lock"
-                  )}
-                </Button>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="clearAfterRelease"
+                      checked={clearLockAfterRelease}
+                      onCheckedChange={(checked) =>
+                        setClearLockAfterRelease(checked as boolean)
+                      }
+                      disabled={isLoading}
+                    />
+                    <label
+                      htmlFor="clearAfterRelease"
+                      className="text-sm font-medium leading-none"
+                    >
+                      Clear lock after release
+                    </label>
+                  </div>
+
+                  <Button
+                    onClick={handleRelease}
+                    disabled={isLoading}
+                    className="w-full"
+                    variant="destructive"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Releasing...
+                      </>
+                    ) : (
+                      "Release Lock"
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={handleReset}
+                    disabled={isLoading}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Resetting...
+                      </>
+                    ) : (
+                      "Reset Lock"
+                    )}
+                  </Button>
+                </div>
               )}
 
               <Button
