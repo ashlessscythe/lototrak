@@ -3,10 +3,6 @@
 import { useState, useMemo } from "react";
 import { DateCell } from "@/components/date-cell";
 import {
-  formatDateWithSettings,
-  formatRelativeTimeWithSettings,
-} from "@/lib/utils";
-import {
   Table,
   TableBody,
   TableCell,
@@ -23,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { EventType, Status } from "@prisma/client";
 
 type Event = {
@@ -51,6 +48,7 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
   const [dateFilter, setDateFilter] = useState("");
   const [userFilter, setUserFilter] = useState<string>("ALL");
   const [locationFilter, setLocationFilter] = useState<string>("ALL");
+  const [lockFilter, setLockFilter] = useState<string>("ALL");
 
   // Sort state
   const [sortConfig, setSortConfig] = useState<{
@@ -74,6 +72,11 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
   // Get unique locations for filter dropdown
   const uniqueLocations = useMemo(() => {
     return Array.from(new Set(initialEvents.map((event) => event.location)));
+  }, [initialEvents]);
+
+  // Get unique locks for filter dropdown
+  const uniqueLocks = useMemo(() => {
+    return Array.from(new Set(initialEvents.map((event) => event.lockName)));
   }, [initialEvents]);
 
   // Filter and sort events
@@ -111,8 +114,16 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
           (event.user?.email && event.user.email === userFilter);
         const matchesLocation =
           locationFilter === "ALL" || event.location === locationFilter;
+        const matchesLock =
+          lockFilter === "ALL" || event.lockName === lockFilter;
 
-        return matchesType && matchesDate && matchesUser && matchesLocation;
+        return (
+          matchesType &&
+          matchesDate &&
+          matchesUser &&
+          matchesLocation &&
+          matchesLock
+        );
       })
       .sort((a, b) => {
         const getValue = (
@@ -154,6 +165,7 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
     dateFilter,
     userFilter,
     locationFilter,
+    lockFilter,
     sortConfig,
   ]);
 
@@ -165,60 +177,93 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
     }));
   };
 
+  const clearFilters = () => {
+    setEventType("ALL");
+    setDateFilter("");
+    setUserFilter("ALL");
+    setLocationFilter("ALL");
+    setLockFilter("ALL");
+  };
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Select
-          value={eventType}
-          onValueChange={(value) => setEventType(value as EventType | "ALL")}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent className="text-foreground bg-background border border-border shadow-md rounded-md">
-            <SelectItem value="ALL">All Types</SelectItem>
-            {Object.values(EventType).map((type) => (
-              <SelectItem key={type} value={type}>
-                {type.replace(/_/g, " ")}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 md:gap-3">
+          <Select
+            value={eventType}
+            onValueChange={(value) => setEventType(value as EventType | "ALL")}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by type" />
+            </SelectTrigger>
+            <SelectContent className="text-foreground bg-background border border-border shadow-md rounded-md max-h-[300px]">
+              <SelectItem value="ALL">All Types</SelectItem>
+              {Object.values(EventType).map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type.replace(/_/g, " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Input
-          placeholder="Filter by date"
-          value={dateFilter}
-          onChange={(e) => setDateFilter(e.target.value)}
-          type="date"
-        />
+          <Input
+            placeholder="Filter by date"
+            value={dateFilter}
+            onChange={(e) => setDateFilter(e.target.value)}
+            type="date"
+          />
 
-        <Select value={locationFilter} onValueChange={setLocationFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by location" />
-          </SelectTrigger>
-          <SelectContent className="text-foreground bg-background border border-border shadow-md rounded-md">
-            <SelectItem value="ALL">All Locations</SelectItem>
-            {uniqueLocations.map((location) => (
-              <SelectItem key={location} value={location}>
-                {location}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by location" />
+            </SelectTrigger>
+            <SelectContent className="text-foreground bg-background border border-border shadow-md rounded-md max-h-[300px]">
+              <SelectItem value="ALL">All Locations</SelectItem>
+              {uniqueLocations.map((location) => (
+                <SelectItem key={location} value={location}>
+                  {location}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={userFilter} onValueChange={setUserFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by user" />
-          </SelectTrigger>
-          <SelectContent className="text-foreground bg-background border border-border shadow-md rounded-md">
-            <SelectItem value="ALL">All Users</SelectItem>
-            {uniqueUsers.map((user) => (
-              <SelectItem key={user} value={user}>
-                {user}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={lockFilter} onValueChange={setLockFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by lock" />
+            </SelectTrigger>
+            <SelectContent className="text-foreground bg-background border border-border shadow-md rounded-md max-h-[300px]">
+              <SelectItem value="ALL">All Locks</SelectItem>
+              {uniqueLocks.map((lock) => (
+                <SelectItem key={lock} value={lock}>
+                  {lock || "Lock Removed"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={userFilter} onValueChange={setUserFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by user" />
+            </SelectTrigger>
+            <SelectContent className="text-foreground bg-background border border-border shadow-md rounded-md max-h-[300px]">
+              <SelectItem value="ALL">All Users</SelectItem>
+              {uniqueUsers.map((user) => (
+                <SelectItem key={user} value={user}>
+                  {user}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            onClick={clearFilters}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            Clear Filters
+          </Button>
+        </div>
       </div>
 
       {/* Table view for desktop */}
@@ -277,18 +322,7 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
                   {event.user?.name || event.user?.email || "Deleted User"}
                 </TableCell>
                 <TableCell>
-                  <DateCell
-                    date={event.createdAt}
-                    settings={settings}
-                    formattedDate={formatDateWithSettings(
-                      event.createdAt,
-                      settings
-                    )}
-                    relativeTime={formatRelativeTimeWithSettings(
-                      event.createdAt,
-                      settings
-                    )}
-                  />
+                  <DateCell date={event.createdAt} settings={settings} />
                 </TableCell>
               </TableRow>
             ))}
@@ -317,18 +351,7 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
                     {event.details}
                   </p>
                 </div>
-                <DateCell
-                  date={event.createdAt}
-                  settings={settings}
-                  formattedDate={formatDateWithSettings(
-                    event.createdAt,
-                    settings
-                  )}
-                  relativeTime={formatRelativeTimeWithSettings(
-                    event.createdAt,
-                    settings
-                  )}
-                />
+                <DateCell date={event.createdAt} settings={settings} />
               </div>
 
               <div>
