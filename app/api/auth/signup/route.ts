@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: "Missing email or password" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
@@ -37,6 +37,23 @@ export async function POST(req: Request) {
         role: "PENDING" as Role,
       },
     });
+
+    // Send welcome email
+    try {
+      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+      await fetch(`${baseUrl}/api/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: user.email,
+        }),
+      });
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError);
+      // Continue with signup response even if email fails
+    }
 
     return NextResponse.json(
       {
