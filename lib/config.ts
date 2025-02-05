@@ -3,4 +3,7 @@ export const siteConfig = {
   description: "Modern Safety Protocol Management",
 } as const;
 
-export const emailFrom = process.env.EMAIL_FROM_DOMAIN || "resend.dev";
+export const emailConfig = {
+  address: process.env.EMAIL_FROM_DOMAIN || "resend.dev",
+  apiKey: process.env.EMAIL_SERVER_PASSWORD,
+};
