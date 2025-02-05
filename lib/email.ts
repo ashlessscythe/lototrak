@@ -1,14 +1,14 @@
 import { Resend } from "resend";
 import { EmailTemplate } from "../components/email-template";
+import { emailFrom, siteConfig } from "./config";
 
 const resend = new Resend(process.env.EMAIL_SERVER_PASSWORD);
-const app_name = process.env.NEXT_PUBLIC_APP_NAME;
-const fromEmail = process.env.EMAIL_FROM || "onboarding@resend.dev";
+const app_name = siteConfig.name || "LOTO-Tracker";
 
 export async function sendEmail(to: string) {
   try {
     const { data, error } = await resend.emails.send({
-      from: `${app_name} <${fromEmail}>`,
+      from: `${app_name} <onboarding@${emailFrom}>`,
       to: [to],
       subject: `Welcome to ${app_name} - Account Pending Approval`,
       react: EmailTemplate({ email: to, appName: app_name || "" }),
