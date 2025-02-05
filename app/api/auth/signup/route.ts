@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hash } from "bcrypt";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@/lib/types";
+import { EmailType } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
         },
         body: JSON.stringify({
           email: user.email,
+          type: EmailType.SIGNUP,
         }),
       });
     } catch (emailError) {

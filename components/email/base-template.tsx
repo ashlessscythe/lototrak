@@ -1,12 +1,12 @@
 import * as React from "react";
 
-interface EmailTemplateProps {
-  email: string;
+interface BaseEmailTemplateProps {
+  children: React.ReactNode;
   appName: string;
 }
 
-export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
-  email,
+export const BaseEmailTemplate: React.FC<Readonly<BaseEmailTemplateProps>> = ({
+  children,
   appName,
 }) => (
   <div
@@ -38,7 +38,7 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
           letterSpacing: "1px",
         }}
       >
-        Welcome to {appName}
+        {appName}
       </h1>
     </div>
 
@@ -58,39 +58,7 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
           marginBottom: "24px",
         }}
       >
-        <p
-          style={{
-            color: "#334155",
-            fontSize: "16px",
-            lineHeight: "24px",
-            margin: "0 0 16px 0",
-          }}
-        >
-          Thank you for signing up. Your account (
-          <span style={{ fontWeight: "600" }}>{email}</span>) is currently
-          pending approval.
-        </p>
-        <p
-          style={{
-            color: "#334155",
-            fontSize: "16px",
-            lineHeight: "24px",
-            margin: "0 0 16px 0",
-          }}
-        >
-          You will receive another email once an administrator has approved your
-          account.
-        </p>
-        <p
-          style={{
-            color: "#334155",
-            fontSize: "16px",
-            lineHeight: "24px",
-            margin: "0",
-          }}
-        >
-          If you have any questions, please contact your system administrator.
-        </p>
+        {children}
       </div>
     </div>
 

@@ -8,15 +8,17 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  role      Role     @default(PENDING)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  locks     Lock[]   @relation("AssignedTo")
-  events    Event[]
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  name            String?
+  role            Role      @default(PENDING)
+  resetToken      String?
+  resetTokenExpiry DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  locks           Lock[]    @relation("AssignedTo")
+  events          Event[]
 }
 
 model Lock {
