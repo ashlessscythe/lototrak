@@ -46,11 +46,7 @@ export default async function EventsPage() {
     }, {} as Record<string, string>);
 
     return (
-      <div className="container mx-auto py-10">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Events</h1>
-        </div>
-
+      <div className="container mx-auto p-4 space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Events</CardTitle>
@@ -69,10 +65,7 @@ export default async function EventsPage() {
     );
   } catch (error) {
     return (
-      <div className="container mx-auto py-10">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Events</h1>
-        </div>
+      <div className="container mx-auto p-4">
         <Alert variant="destructive">
           <AlertDescription>
             Failed to load events. Please try again later.

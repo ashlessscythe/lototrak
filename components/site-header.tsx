@@ -87,7 +87,7 @@ export function SiteHeader() {
           </NavigationMenuItem>
           {canViewEvents && (
             <NavigationMenuItem>
-              <Link href="/admin/events" legacyBehavior passHref>
+              <Link href="/events" legacyBehavior passHref>
                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                   Events
                 </NavigationMenuLink>
@@ -155,7 +155,7 @@ export function SiteHeader() {
               </Link>
               {canViewEvents && (
                 <Link
-                  href="/admin/events"
+                  href="/events"
                   className="text-base font-medium hover:underline"
                 >
                   Events
@@ -241,7 +241,7 @@ export function SiteHeader() {
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                          <Link href="/admin/events">View Events</Link>
+                          <Link href="/events">View Events</Link>
                         </DropdownMenuItem>
                       </>
                     )}

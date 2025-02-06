@@ -10,46 +10,56 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+
+    if (!session) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const lockId = searchParams.get("lockId");
-    const limit = parseInt(searchParams.get("limit") || "3");
-
-    if (!lockId) {
-      return new NextResponse("Missing lockId parameter", { status: 400 });
+    // Allow ADMIN, SUPERVISOR, and MANAGER roles to view events
+    if (!["ADMIN", "SUPERVISOR", "MANAGER"].includes(session.user?.role)) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const events = await prisma.event.findMany({
-      where: {
-        lockId,
-        // Don't filter by userId since we want to see all events for the lock
-      },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      select: {
-        id: true,
-        type: true,
-        details: true,
-        location: true,
-        lockName: true,
-        lockStatus: true,
-        safetyChecks: true,
-        createdAt: true,
-        user: {
-          select: {
-            name: true,
-            email: true,
+    // Get query parameters
+    const url = new URL(req.url);
+    const lockId = url.searchParams.get("lockId");
+    const type = url.searchParams.get("type") as EventType | null;
+    const limit = parseInt(url.searchParams.get("limit") || "100");
+    const offset = parseInt(url.searchParams.get("offset") || "0");
+
+    // Build where clause
+    const where = {
+      ...(lockId && { lockId }),
+      ...(type && { type }),
+    };
+
+    // Fetch events with pagination
+    const [events, total] = await prisma.$transaction([
+      prisma.event.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
           },
         },
-      },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.event.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      events,
+      total,
+      limit,
+      offset,
     });
-
-    console.log("[EVENTS_GET] Found events:", events); // Debug log
-
-    return NextResponse.json(events);
   } catch (error) {
     console.error("[EVENTS_GET]", error);
     return new NextResponse("Internal error", { status: 500 });
@@ -59,50 +69,51 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+
+    if (!session) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Allow ADMIN, SUPERVISOR, and MANAGER roles to create events
+    if (!["ADMIN", "SUPERVISOR", "MANAGER"].includes(session.user?.role)) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const body = await req.json();
-    const {
-      type,
-      details,
-      location,
-      lockName,
-      lockStatus,
-      lockId,
-      safetyChecks,
-    } = body;
+    const { type, details, lockId, lockName, lockStatus, location } = body;
 
-    // Validate required fields
-    if (!type || !details || !location || !lockName || !lockStatus || !lockId) {
+    if (!type || !details) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
-    // Validate type is a valid EventType
-    if (!Object.values(EventType).includes(type)) {
-      return new NextResponse("Invalid event type", { status: 400 });
-    }
-
-    // Validate status is a valid Status
-    if (!Object.values(Status).includes(lockStatus)) {
-      return new NextResponse("Invalid lock status", { status: 400 });
+    // Validate event type
+    const validTypes = Object.values(EventType);
+    if (!validTypes.includes(type)) {
+      return new NextResponse(
+        `Invalid event type. Must be one of: ${validTypes.join(", ")}`,
+        { status: 400 }
+      );
     }
 
     const event = await prisma.event.create({
       data: {
         type,
         details,
-        location,
+        lockId,
         lockName,
         lockStatus,
-        lockId,
-        safetyChecks,
+        location,
         userId: session.user.id,
       },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
     });
-
-    console.log("[EVENTS_POST] Created event:", event); // Debug log
 
     return NextResponse.json(event);
   } catch (error) {

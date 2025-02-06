@@ -32,7 +32,7 @@ export default function Dashboard() {
   };
 
   const isAdminUser = userRole === "ADMIN";
-  const canViewEvents = ["ADMIN", "SUPERVISOR"].includes(userRole);
+  const canViewEvents = ["ADMIN", "MANAGER", "SUPERVISOR"].includes(userRole);
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,7 +68,7 @@ export default function Dashboard() {
                   {canViewEvents && (
                     <>
                       <Button className="w-full" variant="outline">
-                        <Link href="/admin/events">View Events</Link>
+                        <Link href="/events">View Events</Link>
                       </Button>
                       <Button className="w-full" variant="outline">
                         <Link href="/locks">View Locks</Link>

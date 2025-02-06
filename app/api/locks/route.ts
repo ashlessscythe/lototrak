@@ -66,11 +66,14 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Only ADMIN can create new locks
-    if (session.user?.role !== "ADMIN") {
-      return new NextResponse("Only administrators can create locks", {
-        status: 403,
-      });
+    // Only ADMIN and MANAGER can create new locks
+    if (!["ADMIN", "MANAGER"].includes(session.user?.role || "")) {
+      return new NextResponse(
+        "Only administrators and managers can create locks",
+        {
+          status: 403,
+        }
+      );
     }
 
     const body = await req.json();
@@ -132,11 +135,14 @@ export async function PUT(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Only ADMIN can update locks
-    if (session.user?.role !== "ADMIN") {
-      return new NextResponse("Only administrators can update locks", {
-        status: 403,
-      });
+    // Only ADMIN and MANAGER can update locks
+    if (!["ADMIN", "MANAGER"].includes(session.user?.role || "")) {
+      return new NextResponse(
+        "Only administrators and managers can update locks",
+        {
+          status: 403,
+        }
+      );
     }
 
     const body = await req.json();

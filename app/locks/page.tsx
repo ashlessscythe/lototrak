@@ -55,7 +55,7 @@ type LockWithAssignee = Lock & {
 
 export default function LocksPage() {
   const { data: session } = useSession();
-  const isAdmin = session?.user?.role === "ADMIN";
+  const canEdit = ["ADMIN", "MANAGER"].includes(session?.user?.role || "");
   const [locks, setLocks] = useState<LockWithAssignee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -358,7 +358,7 @@ export default function LocksPage() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Lock Management</CardTitle>
-            {isAdmin && (
+            {canEdit && (
               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
                   <Button
@@ -524,7 +524,7 @@ export default function LocksPage() {
                       <TableHead>Assigned To</TableHead>
                       <TableHead>Safety Procedures</TableHead>
                       <TableHead>QR Code</TableHead>
-                      {isAdmin && <TableHead>Actions</TableHead>}
+                      {canEdit && <TableHead>Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -595,7 +595,7 @@ export default function LocksPage() {
                             </DialogContent>
                           </Dialog>
                         </TableCell>
-                        {isAdmin && (
+                        {canEdit && (
                           <TableCell>
                             <div className="flex gap-2">
                               <Button
@@ -733,7 +733,7 @@ export default function LocksPage() {
                           </DialogContent>
                         </Dialog>
 
-                        {isAdmin && (
+                        {canEdit && (
                           <div className="flex gap-2">
                             <Button
                               variant="outline"
