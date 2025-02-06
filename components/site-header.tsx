@@ -264,7 +264,7 @@ export function SiteHeader() {
               <Button
                 variant="outline"
                 asChild
-                className="hidden sm:inline-flex"
+                className="inline-flex"
               >
                 <Link href="/auth/signin">Sign In</Link>
               </Button>
