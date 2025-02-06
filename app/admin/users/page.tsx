@@ -79,6 +79,8 @@ export default function UsersPage() {
     switch (role) {
       case "ADMIN":
         return "text-red-600 dark:text-red-400";
+      case "MANAGER":
+        return "text-purple-600 dark:text-purple-400";
       case "SUPERVISOR":
         return "text-blue-600 dark:text-blue-400";
       case "USER":
@@ -90,7 +92,7 @@ export default function UsersPage() {
     }
   };
 
-  const roleOptions: Role[] = ["USER", "SUPERVISOR", "ADMIN", "PENDING"];
+  const roleOptions: Role[] = ["ADMIN", "MANAGER", "SUPERVISOR", "USER", "PENDING"];
 
   return (
     <div className="container mx-auto p-4">

@@ -27,7 +27,7 @@ export async function GET() {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Only allow ADMIN and SUPERVISOR roles
+    // Allow ADMIN and SUPERVISOR roles to view locks
     if (!["ADMIN", "SUPERVISOR"].includes(session.user?.role)) {
       console.log("Invalid role:", session.user?.role);
       return new NextResponse("Unauthorized", { status: 401 });
@@ -66,9 +66,9 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Only allow ADMIN and SUPERVISOR roles
-    if (!["ADMIN", "SUPERVISOR"].includes(session.user?.role)) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    // Only ADMIN can create new locks
+    if (session.user?.role !== "ADMIN") {
+      return new NextResponse("Only administrators can create locks", { status: 403 });
     }
 
     const body = await req.json();
@@ -130,9 +130,9 @@ export async function PUT(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Only allow ADMIN and SUPERVISOR roles
-    if (!["ADMIN", "SUPERVISOR"].includes(session.user?.role)) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    // Only ADMIN can update locks
+    if (session.user?.role !== "ADMIN") {
+      return new NextResponse("Only administrators can update locks", { status: 403 });
     }
 
     const body = await req.json();

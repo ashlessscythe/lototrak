@@ -8,12 +8,12 @@ declare module "next-auth" {
   interface Session extends DefaultSession {
     user: {
       id: string;
-      role: "ADMIN" | "SUPERVISOR" | "USER" | "PENDING";
+      role: "ADMIN" | "MANAGER" | "SUPERVISOR" | "USER" | "PENDING";
     } & DefaultSession["user"];
   }
 
   interface User {
-    role: "ADMIN" | "SUPERVISOR" | "USER" | "PENDING";
+    role: "ADMIN" | "MANAGER" | "SUPERVISOR" | "USER" | "PENDING";
   }
 }
 
@@ -75,6 +75,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.sub as string;
         session.user.role = token.role as
           | "ADMIN"
+          | "MANAGER"
           | "SUPERVISOR"
           | "USER"
           | "PENDING";

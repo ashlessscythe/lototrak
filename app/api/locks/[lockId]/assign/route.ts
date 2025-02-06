@@ -16,8 +16,13 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user?.id || session.user.role === 'PENDING') {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Only ADMIN, MANAGER, and SUPERVISOR can assign locks
+    if (!["ADMIN", "MANAGER", "SUPERVISOR"].includes(session.user.role)) {
+      return new NextResponse("Insufficient permissions", { status: 403 });
     }
 
     const { lockId } = params;
@@ -50,6 +55,11 @@ export async function POST(
 
     if (!lock) {
       return new NextResponse("Lock not found", { status: 404 });
+    }
+
+    // For supervisors, ensure lock is in AVAILABLE state
+    if (session.user.role === "SUPERVISOR" && lock.status !== "AVAILABLE") {
+      return new NextResponse("Supervisors can only assign available locks", { status: 403 });
     }
 
     // Verify lock is available

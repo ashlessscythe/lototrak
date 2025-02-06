@@ -14,9 +14,9 @@ export async function DELETE(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // Only allow ADMIN and SUPERVISOR roles
-    if (!["ADMIN", "SUPERVISOR"].includes(session.user?.role)) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    // Only ADMIN can delete locks
+    if (session.user?.role !== "ADMIN") {
+      return new NextResponse("Only administrators can delete locks", { status: 403 });
     }
 
     const { lockId } = params;

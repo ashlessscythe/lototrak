@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcrypt";
 import { prisma } from "@/lib/prisma";
@@ -37,7 +37,7 @@ const handler = NextAuth({
           email: user.email,
           name: user.name,
           role: user.role,
-          image: null, // Required by next-auth User type
+          image: null,
         };
       },
     }),
@@ -53,11 +53,7 @@ const handler = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.sub as string;
-        session.user.role = token.role as
-          | "ADMIN"
-          | "SUPERVISOR"
-          | "USER"
-          | "PENDING";
+        session.user.role = token.role as "ADMIN" | "MANAGER" | "SUPERVISOR" | "USER" | "PENDING";
       }
       return session;
     },
