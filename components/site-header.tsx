@@ -49,7 +49,9 @@ export function SiteHeader() {
     }
   };
 
-  const isAdminUser = userRole && ["ADMIN", "SUPERVISOR"].includes(userRole);
+  const isAdminUser = userRole === "ADMIN";
+  const canViewEvents =
+    userRole && ["ADMIN", "SUPERVISOR", "MANAGER"].includes(userRole);
 
   const NavigationItems = () => (
     <>
@@ -70,32 +72,34 @@ export function SiteHeader() {
             </Link>
           </NavigationMenuItem>
           <NavigationMenuItem>
+            <Link href="/locks" legacyBehavior passHref>
+              <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                Locks
+              </NavigationMenuLink>
+            </Link>
+          </NavigationMenuItem>
+          <NavigationMenuItem>
             <Link href="/locks/scan" legacyBehavior passHref>
               <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                 Scan Lock
               </NavigationMenuLink>
             </Link>
           </NavigationMenuItem>
+          {canViewEvents && (
+            <NavigationMenuItem>
+              <Link href="/admin/events" legacyBehavior passHref>
+                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  Events
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+          )}
           {isAdminUser && (
             <>
               <NavigationMenuItem>
                 <Link href="/admin" legacyBehavior passHref>
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     Admin
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <Link href="/admin/locks" legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Locks
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <Link href="/admin/events" legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Events
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
@@ -138,11 +142,25 @@ export function SiteHeader() {
                 Dashboard
               </Link>
               <Link
+                href="/locks"
+                className="text-base font-medium hover:underline"
+              >
+                Locks
+              </Link>
+              <Link
                 href="/locks/scan"
                 className="text-base font-medium hover:underline"
               >
                 Scan Lock
               </Link>
+              {canViewEvents && (
+                <Link
+                  href="/admin/events"
+                  className="text-base font-medium hover:underline"
+                >
+                  Events
+                </Link>
+              )}
               {isAdminUser && (
                 <>
                   <Link
@@ -150,18 +168,6 @@ export function SiteHeader() {
                     className="text-base font-medium hover:underline"
                   >
                     Admin
-                  </Link>
-                  <Link
-                    href="/admin/locks"
-                    className="text-base font-medium hover:underline"
-                  >
-                    Locks
-                  </Link>
-                  <Link
-                    href="/admin/events"
-                    className="text-base font-medium hover:underline"
-                  >
-                    Events
                   </Link>
                   <Link
                     href="/admin/settings"
@@ -223,11 +229,22 @@ export function SiteHeader() {
                       <Link href="/dashboard">Dashboard</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link href="/locks">Locks</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link href="/locks/scan">Scan Lock</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/profile">Profile Settings</Link>
                     </DropdownMenuItem>
+                    {canViewEvents && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin/events">View Events</Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     {isAdminUser && (
                       <>
                         <DropdownMenuSeparator />
@@ -236,12 +253,6 @@ export function SiteHeader() {
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/admin/users">Manage Users</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/admin/locks">Manage Locks</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link href="/admin/events">View Events</Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link href="/admin/settings">System Settings</Link>
@@ -261,11 +272,7 @@ export function SiteHeader() {
             </DropdownMenu>
           ) : (
             <>
-              <Button
-                variant="outline"
-                asChild
-                className="inline-flex"
-              >
+              <Button variant="outline" asChild className="inline-flex">
                 <Link href="/auth/signin">Sign In</Link>
               </Button>
               <Button asChild className="h-9 px-3 md:h-10 md:px-4">

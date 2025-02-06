@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+
+// Mark route as dynamic
+export const dynamic = "force-dynamic";
+
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/app/auth";
@@ -16,7 +20,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role === 'PENDING') {
+    if (!session?.user?.id || session.user.role === "PENDING") {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -59,7 +63,9 @@ export async function POST(
 
     // For supervisors, ensure lock is in AVAILABLE state
     if (session.user.role === "SUPERVISOR" && lock.status !== "AVAILABLE") {
-      return new NextResponse("Supervisors can only assign available locks", { status: 403 });
+      return new NextResponse("Supervisors can only assign available locks", {
+        status: 403,
+      });
     }
 
     // Verify lock is available

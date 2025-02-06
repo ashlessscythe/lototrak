@@ -58,13 +58,18 @@ export default function ScanPage() {
     setIsLoading(true);
     setError(null);
     try {
-      console.log("Scanned lock ID:", lockId);
-      const response = await fetch(`/api/locks/${lockId}`, {
-        credentials: "include", // Include session cookie
-      });
+      console.log("Scanned QR code:", lockId);
+      const response = await fetch(
+        `/api/locks/qr?code=${encodeURIComponent(lockId)}`,
+        {
+          credentials: "include", // Include session cookie
+        }
+      );
 
       if (response.status === 404) {
-        throw new Error("Invalid QR code. Lock not found in the system.");
+        throw new Error(
+          "Invalid or unknown QR code. Lock not found in the system."
+        );
       }
 
       if (!response.ok) {
@@ -79,7 +84,7 @@ export default function ScanPage() {
 
       // Fetch recent events separately
       const eventsResponse = await fetch(
-        `/api/events?lockId=${lockId}&limit=3`,
+        `/api/events?lockId=${lock.id}&limit=3`,
         {
           credentials: "include", // Include session cookie
         }

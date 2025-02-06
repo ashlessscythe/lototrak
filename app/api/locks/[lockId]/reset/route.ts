@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+
+// Mark route as dynamic
+export const dynamic = "force-dynamic";
+
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/app/auth";
@@ -10,13 +14,16 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role === 'PENDING') {
+    if (!session?.user?.id || session.user.role === "PENDING") {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
     // Only ADMIN and MANAGER can reset locks
     if (!["ADMIN", "MANAGER"].includes(session.user.role)) {
-      return new NextResponse("Only administrators and managers can reset locks", { status: 403 });
+      return new NextResponse(
+        "Only administrators and managers can reset locks",
+        { status: 403 }
+      );
     }
 
     const { lockId } = params;

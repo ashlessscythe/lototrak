@@ -23,7 +23,7 @@ export default function AdminDashboard() {
     {
       title: "Lock Management",
       description: "Manage locks and assignments",
-      link: "/admin/locks",
+      link: "/locks",
       icon: "🔒",
     },
     {

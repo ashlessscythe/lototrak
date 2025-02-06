@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+
+// Mark route as dynamic
+export const dynamic = "force-dynamic";
+
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/app/auth";
@@ -10,7 +14,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role === 'PENDING') {
+    if (!session?.user?.id || session.user.role === "PENDING") {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -41,7 +45,10 @@ export async function POST(
     // For supervisors, verify they own the lock or it's assigned to their user
     if (session.user.role === "SUPERVISOR") {
       if (lock.userId !== session.user.id) {
-        return new NextResponse("Supervisors can only release locks assigned to them", { status: 403 });
+        return new NextResponse(
+          "Supervisors can only release locks assigned to them",
+          { status: 403 }
+        );
       }
     }
 

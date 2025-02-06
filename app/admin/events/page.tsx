@@ -12,7 +12,10 @@ export const dynamic = "force-dynamic";
 export default async function EventsPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || !["SUPERVISOR", "ADMIN"].includes(session.user.role)) {
+  if (
+    !session ||
+    !["ADMIN", "SUPERVISOR", "MANAGER"].includes(session.user.role)
+  ) {
     redirect("/auth/signin");
   }
 

@@ -2,13 +2,15 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-type Role = "ADMIN" | "SUPERVISOR" | "USER" | "PENDING";
+type Role = "ADMIN" | "MANAGER" | "SUPERVISOR" | "USER" | "PENDING";
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
   const isAuthPage = request.nextUrl.pathname.startsWith("/auth");
   const isHomePage = request.nextUrl.pathname === "/";
   const isDashboardPage = request.nextUrl.pathname.startsWith("/dashboard");
+  const isAdminPage = request.nextUrl.pathname.startsWith("/admin");
+  const isEventsPage = request.nextUrl.pathname.startsWith("/admin/events");
 
   // Allow public access to home page
   if (isHomePage) {
@@ -44,6 +46,28 @@ export async function middleware(request: NextRequest) {
     // Redirect PENDING users to pending page
     if ((token.role as Role) === "PENDING") {
       return NextResponse.redirect(new URL("/auth/pending", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Protect events routes - allow ADMIN, SUPERVISOR, and MANAGER roles
+  if (isEventsPage) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/auth/signin", request.url));
+    }
+    if (!["ADMIN", "SUPERVISOR", "MANAGER"].includes(token.role as Role)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  // Protect admin routes - only allow ADMIN role
+  if (isAdminPage && !isEventsPage) {
+    if (!token) {
+      return NextResponse.redirect(new URL("/auth/signin", request.url));
+    }
+    if ((token.role as Role) !== "ADMIN") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
   }
