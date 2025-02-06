@@ -49,6 +49,7 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
   const [userFilter, setUserFilter] = useState<string>("ALL");
   const [locationFilter, setLocationFilter] = useState<string>("ALL");
   const [lockFilter, setLockFilter] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<Status | "ALL">("ALL");
 
   // Sort state
   const [sortConfig, setSortConfig] = useState<{
@@ -116,13 +117,16 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
           locationFilter === "ALL" || event.location === locationFilter;
         const matchesLock =
           lockFilter === "ALL" || event.lockName === lockFilter;
+        const matchesStatus =
+          statusFilter === "ALL" || event.lockStatus === statusFilter;
 
         return (
           matchesType &&
           matchesDate &&
           matchesUser &&
           matchesLocation &&
-          matchesLock
+          matchesLock &&
+          matchesStatus
         );
       })
       .sort((a, b) => {
@@ -166,6 +170,7 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
     userFilter,
     locationFilter,
     lockFilter,
+    statusFilter,
     sortConfig,
   ]);
 
@@ -183,12 +188,13 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
     setUserFilter("ALL");
     setLocationFilter("ALL");
     setLockFilter("ALL");
+    setStatusFilter("ALL");
   };
 
   return (
     <div className="space-y-4">
       <div className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 md:gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2 md:gap-3">
           <Select
             value={eventType}
             onValueChange={(value) => setEventType(value as EventType | "ALL")}
@@ -250,6 +256,23 @@ export function EventsTable({ events: initialEvents, settings }: Props) {
               {uniqueUsers.map((user) => (
                 <SelectItem key={user} value={user}>
                   {user}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => setStatusFilter(value as Status | "ALL")}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent className="text-foreground bg-background border border-border shadow-md rounded-md max-h-[300px]">
+              <SelectItem value="ALL">All Statuses</SelectItem>
+              {Object.values(Status).map((status) => (
+                <SelectItem key={status} value={status}>
+                  {status}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -133,6 +133,10 @@ async function main() {
     .option("clear", {
       type: "boolean",
       description: "Clear existing data before seeding",
+    })
+    .option("add-locks", {
+      type: "number",
+      description: "Number of additional locks to create",
     }).argv;
 
   // Clear existing data if --clear flag is present
@@ -158,7 +162,7 @@ async function main() {
   console.log("Created default user:", bob.email);
 
   // Create locks for bob
-  const bobLockCount = 2;
+  const bobLockCount = argv["add-locks"] || 2; // Use add-locks value if provided, otherwise default to 2
   for (let i = 0; i < bobLockCount; i++) {
     const lock = await createLockWithEvents(bob.id);
     console.log(
