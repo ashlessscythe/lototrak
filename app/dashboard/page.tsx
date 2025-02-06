@@ -31,7 +31,8 @@ export default function Dashboard() {
     }
   };
 
-  const isAdminUser = ["ADMIN", "SUPERVISOR"].includes(userRole);
+  const isAdminUser = userRole === "ADMIN";
+  const canViewEvents = ["ADMIN", "SUPERVISOR"].includes(userRole);
 
   return (
     <div className="min-h-screen bg-background">
@@ -64,18 +65,20 @@ export default function Dashboard() {
                   <Button className="w-full">
                     <Link href="/locks/scan">Scan Lock</Link>
                   </Button>
-                  {isAdminUser && (
+                  {canViewEvents && (
                     <>
                       <Button className="w-full" variant="outline">
                         <Link href="/admin/events">View Events</Link>
                       </Button>
-                      <Button className="w-full" variant="secondary" asChild>
-                        <Link href="/admin/users">Manage Users</Link>
-                      </Button>
                       <Button className="w-full" variant="outline">
-                        <Link href="/admin/locks">View Locks</Link>
+                        <Link href="/locks">View Locks</Link>
                       </Button>
                     </>
+                  )}
+                  {isAdminUser && (
+                    <Button className="w-full" variant="secondary" asChild>
+                      <Link href="/admin/users">Manage Users</Link>
+                    </Button>
                   )}
                 </CardContent>
               </Card>
