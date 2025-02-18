@@ -20,6 +20,18 @@ export async function GET() {
             name: true,
           },
         },
+        users: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+              },
+            },
+          },
+        },
       },
     });
 

@@ -20,7 +20,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const { role, departmentId } = await request.json();
+    const { role, departmentId, action } = await request.json();
 
     // Validate role if provided
     if (role && !Object.values(Role).includes(role)) {
@@ -80,23 +80,34 @@ export async function PATCH(
         },
       });
 
-      // Handle department assignment if provided
+      // Handle department assignment/removal if provided
       if (departmentId) {
-        // Check if already assigned
-        const existing = await tx.userDepartment.findUnique({
-          where: {
-            userId_departmentId: {
-              userId: params.userId,
-              departmentId,
+        if (action === "add") {
+          // Check if already assigned
+          const existing = await tx.userDepartment.findUnique({
+            where: {
+              userId_departmentId: {
+                userId: params.userId,
+                departmentId,
+              },
             },
-          },
-        });
+          });
 
-        if (!existing) {
-          await tx.userDepartment.create({
-            data: {
-              userId: params.userId,
-              departmentId,
+          if (!existing) {
+            await tx.userDepartment.create({
+              data: {
+                userId: params.userId,
+                departmentId,
+              },
+            });
+          }
+        } else if (action === "remove") {
+          await tx.userDepartment.delete({
+            where: {
+              userId_departmentId: {
+                userId: params.userId,
+                departmentId,
+              },
             },
           });
         }
@@ -105,8 +116,8 @@ export async function PATCH(
       return user;
     });
 
-    // Send email if user was pending and is now approved
-    if (currentUser.role === "PENDING" && role !== "PENDING") {
+    // Send email if role was changed from pending to something else
+    if (role && currentUser.role === "PENDING" && role !== "PENDING") {
       await sendEmail({
         to: currentUser.email,
         type: EmailType.ROLE_CHANGE,

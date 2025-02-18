@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { UserSelector } from "@/components/user-selector";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -27,6 +28,18 @@ interface Company {
   name: string;
 }
 
+interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+}
+
+interface UserDepartment {
+  user: User;
+  assignedAt: string;
+}
+
 interface Department {
   id: string;
   name: string;
@@ -34,6 +47,7 @@ interface Department {
   companyId: string;
   isDefault: boolean;
   company: Company;
+  users: UserDepartment[];
 }
 
 export default function DepartmentsPage() {
@@ -41,6 +55,7 @@ export default function DepartmentsPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isManageUsersDialogOpen, setIsManageUsersDialogOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] =
     useState<Department | null>(null);
   const [formData, setFormData] = useState({
@@ -272,6 +287,16 @@ export default function DepartmentsPage() {
                     Edit
                   </Button>
                   <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedDepartment(dept);
+                      setIsManageUsersDialogOpen(true);
+                    }}
+                  >
+                    Manage Users
+                  </Button>
+                  <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDelete(dept.id)}
@@ -334,6 +359,28 @@ export default function DepartmentsPage() {
             </div>
             <Button type="submit">Update</Button>
           </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={isManageUsersDialogOpen}
+        onOpenChange={setIsManageUsersDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage Department Users</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedDepartment && (
+              <UserSelector
+                departmentId={selectedDepartment.id}
+                departmentUsers={selectedDepartment.users}
+                onUpdate={() => {
+                  loadDepartments();
+                  setIsManageUsersDialogOpen(false);
+                }}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
