@@ -178,7 +178,7 @@ async function main() {
     let adminCount = 0; // Track number of additional admins created
 
     for (let i = 0; i < count; i++) {
-      const email = faker.internet.email();
+      const email = faker.internet.email().replace(/[^@]+$/, "example.com");
 
       // Determine role - ensure only one additional admin
       let role: Role;

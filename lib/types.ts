@@ -1,6 +1,6 @@
-import { Role as PrismaRole } from "@prisma/client";
+import { Role } from "@prisma/client";
 
-export type Role = PrismaRole;
+export { Role };
 
 export type Status = "AVAILABLE" | "IN_USE" | "MAINTENANCE" | "RETIRED";
 export type EventType =

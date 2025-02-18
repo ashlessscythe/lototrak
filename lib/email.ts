@@ -2,23 +2,34 @@ import { Resend } from "resend";
 import * as React from "react";
 import { SignupTemplate } from "../components/email/signup-template";
 import { ResetPasswordTemplate } from "../components/email/reset-password-template";
+import { RoleChangeTemplate } from "../components/email/role-change-template";
 import { emailConfig, siteConfig } from "./config";
 
 // Mock email sender for development/testing
 class MockEmailSender {
-  async send({ from, to, subject, react }: { from: string; to: string[]; subject: string; react: React.ReactElement }) {
-    console.log('MOCK EMAIL SENT:', {
+  async send({
+    from,
+    to,
+    subject,
+    react,
+  }: {
+    from: string;
+    to: string[];
+    subject: string;
+    react: React.ReactElement;
+  }) {
+    console.log("MOCK EMAIL SENT:", {
       from,
       to,
       subject,
-      content: 'React template rendered (mock)',
+      content: "React template rendered (mock)",
     });
     return { data: { id: `mock-${Date.now()}` }, error: null };
   }
 }
 
 // Use mock sender if no API key, otherwise use Resend
-const emailSender = emailConfig.apiKey 
+const emailSender = emailConfig.apiKey
   ? new Resend(emailConfig.apiKey)
   : { emails: new MockEmailSender() };
 
@@ -27,6 +38,7 @@ const app_name = siteConfig.name || "LOTO-Tracker";
 export enum EmailType {
   SIGNUP = "signup",
   PASSWORD_RESET = "password_reset",
+  ROLE_CHANGE = "role_change",
 }
 
 interface EmailOptions {
@@ -34,6 +46,7 @@ interface EmailOptions {
   type: EmailType;
   data?: {
     resetLink?: string;
+    newRole?: string;
   };
 }
 
@@ -43,6 +56,18 @@ export async function sendEmail({ to, type, data }: EmailOptions) {
     let reactTemplate: React.ReactElement;
 
     switch (type) {
+      case EmailType.ROLE_CHANGE:
+        if (!data?.newRole) {
+          throw new Error("New role is required for role change emails");
+        }
+        subject = `Your ${app_name} Account Has Been Approved`;
+        reactTemplate = React.createElement(RoleChangeTemplate, {
+          email: to,
+          appName: app_name,
+          newRole: data.newRole,
+        });
+        break;
+
       case EmailType.SIGNUP:
         subject = `Welcome to ${app_name} - Account Pending Approval`;
         reactTemplate = React.createElement(SignupTemplate, {
