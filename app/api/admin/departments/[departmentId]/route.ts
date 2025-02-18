@@ -15,15 +15,54 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, description } = body;
+    const { name, description, companyId } = body;
 
-    if (!name) {
-      return new NextResponse("Name is required", { status: 400 });
+    if (!name || !companyId) {
+      return new NextResponse("Name and company are required", { status: 400 });
+    }
+
+    // Check if company exists
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      return new NextResponse("Company not found", { status: 404 });
+    }
+
+    // Check if department name already exists in the company (excluding current department)
+    const existingDepartment = await prisma.department.findFirst({
+      where: {
+        name,
+        companyId,
+        NOT: {
+          id: params.departmentId,
+        },
+      },
+    });
+
+    if (existingDepartment) {
+      return new NextResponse(
+        "Department with this name already exists in the company",
+        { status: 400 }
+      );
     }
 
     const department = await prisma.department.update({
       where: { id: params.departmentId },
-      data: { name, description },
+      data: {
+        name,
+        description,
+        companyId,
+      },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(department);
@@ -42,6 +81,21 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "ADMIN") {
       return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // Check if department exists and is not default
+    const department = await prisma.department.findUnique({
+      where: { id: params.departmentId },
+    });
+
+    if (!department) {
+      return new NextResponse("Department not found", { status: 404 });
+    }
+
+    if (department.isDefault) {
+      return new NextResponse("Cannot delete default department", {
+        status: 400,
+      });
     }
 
     // Check if department has any users

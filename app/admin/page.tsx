@@ -15,6 +15,12 @@ export default function AdminDashboard() {
 
   const adminFeatures = [
     {
+      title: "Companies",
+      description: "Manage company profiles",
+      link: "/admin/companies",
+      icon: "🏭",
+    },
+    {
       title: "User Management",
       description: "Manage user accounts and roles",
       link: "/admin/users",

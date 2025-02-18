@@ -13,6 +13,14 @@ export async function GET() {
 
     const departments = await prisma.department.findMany({
       orderBy: { name: "asc" },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(departments);
@@ -31,26 +39,49 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description } = body;
+    const { name, description, companyId } = body;
 
-    if (!name) {
-      return new NextResponse("Name is required", { status: 400 });
+    if (!name || !companyId) {
+      return new NextResponse("Name and company are required", { status: 400 });
     }
 
-    // Get default company
-    const defaultCompany = await prisma.company.findFirst({
-      where: { isDefault: true },
+    // Check if company exists
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
     });
 
-    if (!defaultCompany) {
-      return new NextResponse("No default company found", { status: 400 });
+    if (!company) {
+      return new NextResponse("Company not found", { status: 404 });
+    }
+
+    // Check if department name already exists in company
+    const existingDepartment = await prisma.department.findFirst({
+      where: {
+        name,
+        companyId,
+      },
+    });
+
+    if (existingDepartment) {
+      return new NextResponse(
+        "Department with this name already exists in the company",
+        { status: 400 }
+      );
     }
 
     const department = await prisma.department.create({
       data: {
         name,
         description,
-        companyId: defaultCompany.id,
+        companyId,
+      },
+      include: {
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 

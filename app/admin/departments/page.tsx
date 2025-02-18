@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -22,16 +22,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
+interface Company {
+  id: string;
+  name: string;
+}
+
 interface Department {
   id: string;
   name: string;
   description: string | null;
   companyId: string;
   isDefault: boolean;
+  company: Company;
 }
 
 export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [companies, setCompanies] = useState<Company[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] =
@@ -39,8 +46,29 @@ export default function DepartmentsPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    companyId: "",
   });
   const { toast } = useToast();
+
+  const loadCompanies = async () => {
+    try {
+      const response = await fetch("/api/admin/companies");
+      if (!response.ok) throw new Error("Failed to load companies");
+      const data = await response.json();
+      setCompanies(data);
+
+      // Set default company in form if available
+      if (data.length > 0) {
+        setFormData((prev) => ({ ...prev, companyId: data[0].id }));
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load companies",
+        variant: "destructive",
+      });
+    }
+  };
 
   const loadDepartments = async () => {
     try {
@@ -68,7 +96,11 @@ export default function DepartmentsPage() {
       if (!response.ok) throw new Error("Failed to create department");
 
       setIsAddDialogOpen(false);
-      setFormData({ name: "", description: "" });
+      setFormData({
+        name: "",
+        description: "",
+        companyId: companies[0]?.id || "",
+      });
       loadDepartments();
       toast({
         title: "Success",
@@ -100,7 +132,11 @@ export default function DepartmentsPage() {
 
       setIsEditDialogOpen(false);
       setSelectedDepartment(null);
-      setFormData({ name: "", description: "" });
+      setFormData({
+        name: "",
+        description: "",
+        companyId: companies[0]?.id || "",
+      });
       loadDepartments();
       toast({
         title: "Success",
@@ -138,10 +174,11 @@ export default function DepartmentsPage() {
     }
   };
 
-  // Load departments on mount
-  useState(() => {
+  // Load data on mount
+  useEffect(() => {
+    loadCompanies();
     loadDepartments();
-  });
+  }, []);
 
   return (
     <div className="container mx-auto py-10">
@@ -156,6 +193,25 @@ export default function DepartmentsPage() {
               <DialogTitle>Add New Department</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="company">Company</Label>
+                <select
+                  id="company"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  value={formData.companyId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, companyId: e.target.value })
+                  }
+                  required
+                >
+                  <option value="">Select a company</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div>
                 <Label htmlFor="name">Name</Label>
                 <Input
@@ -187,6 +243,7 @@ export default function DepartmentsPage() {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
+            <TableHead>Company</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -195,6 +252,7 @@ export default function DepartmentsPage() {
           {departments.map((dept) => (
             <TableRow key={dept.id}>
               <TableCell>{dept.name}</TableCell>
+              <TableCell>{dept.company.name}</TableCell>
               <TableCell>{dept.description}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
@@ -206,6 +264,7 @@ export default function DepartmentsPage() {
                       setFormData({
                         name: dept.name,
                         description: dept.description || "",
+                        companyId: dept.companyId,
                       });
                       setIsEditDialogOpen(true);
                     }}
@@ -216,6 +275,7 @@ export default function DepartmentsPage() {
                     variant="destructive"
                     size="sm"
                     onClick={() => handleDelete(dept.id)}
+                    disabled={dept.isDefault}
                   >
                     Delete
                   </Button>
@@ -232,6 +292,25 @@ export default function DepartmentsPage() {
             <DialogTitle>Edit Department</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4">
+            <div>
+              <Label htmlFor="edit-company">Company</Label>
+              <select
+                id="edit-company"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                value={formData.companyId}
+                onChange={(e) =>
+                  setFormData({ ...formData, companyId: e.target.value })
+                }
+                required
+              >
+                <option value="">Select a company</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <Label htmlFor="edit-name">Name</Label>
               <Input
