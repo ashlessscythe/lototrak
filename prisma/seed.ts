@@ -170,6 +170,24 @@ async function ensureUserInDefaultDepartment(
   });
 }
 
+async function assignUsersToDefaultDepartment(defaultDepartmentId: string) {
+  // Find all users
+  const users = await prisma.user.findMany();
+
+  for (const user of users) {
+    // Check if user has any departments
+    const userDepartments = await prisma.userDepartment.findMany({
+      where: { userId: user.id },
+    });
+
+    // If user has no departments, assign to default
+    if (userDepartments.length === 0) {
+      await ensureUserInDefaultDepartment(user.id, defaultDepartmentId);
+      console.log(`Assigned user ${user.email} to default department`);
+    }
+  }
+}
+
 async function main() {
   // Parse command line arguments
   const argv = await yargs(hideBin(process.argv))
@@ -275,6 +293,9 @@ async function main() {
       }
     }
   }
+
+  // Assign any users without departments to default department
+  await assignUsersToDefaultDepartment(defaultDepartment.id);
 }
 
 main()

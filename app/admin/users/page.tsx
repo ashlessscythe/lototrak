@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Role, User } from "@/lib/types";
 import { useCallback, useEffect, useState } from "react";
+import { DepartmentSelector } from "@/components/department-selector";
 import {
   Select,
   SelectContent,
@@ -30,7 +31,6 @@ import {
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeptDialog, setShowDeptDialog] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -38,24 +38,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-    fetchDepartments();
   }, []);
-
-  const fetchDepartments = async () => {
-    try {
-      const response = await fetch("/api/admin/departments");
-      if (response.ok) {
-        const data = await response.json();
-        setDepartments(data);
-      }
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to fetch departments",
-      });
-    }
-  };
 
   const fetchUsers = async () => {
     try {
@@ -210,55 +193,23 @@ export default function UsersPage() {
             <DialogTitle>Assign Department</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Select Department</Label>
-              <Select
-                onValueChange={async (deptId) => {
-                  if (!selectedUserId) return;
-
-                  try {
-                    const response = await fetch(
-                      `/api/users/${selectedUserId}`,
-                      {
-                        method: "PATCH",
-                        headers: {
-                          "Content-Type": "application/json",
-                        },
-                        body: JSON.stringify({ departmentId: deptId }),
-                      }
-                    );
-
-                    if (response.ok) {
-                      toast({
-                        title: "Success",
-                        description: "Department assigned successfully",
-                      });
-                      fetchUsers();
-                      setShowDeptDialog(false);
-                    } else {
-                      throw new Error("Failed to assign department");
-                    }
-                  } catch (error) {
-                    toast({
-                      variant: "destructive",
-                      title: "Error",
-                      description: "Failed to assign department",
-                    });
-                  }
+            {selectedUserId && (
+              <DepartmentSelector
+                userId={selectedUserId}
+                userDepartments={
+                  users
+                    .find((u) => u.id === selectedUserId)
+                    ?.departments.map((d) => ({
+                      ...d,
+                      assignedAt: d.assignedAt.toString(),
+                    })) || []
+                }
+                onUpdate={() => {
+                  fetchUsers();
+                  setShowDeptDialog(false);
                 }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map((dept) => (
-                    <SelectItem key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              />
+            )}
           </div>
         </DialogContent>
       </Dialog>
