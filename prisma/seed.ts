@@ -118,6 +118,58 @@ function getRoleBasedPassword(role: Role): string {
   }
 }
 
+async function createDefaultCompanyAndDepartment() {
+  // Create or get default company
+  const defaultCompany = await prisma.company.upsert({
+    where: { name: "Default Company" },
+    update: { isDefault: true },
+    create: {
+      name: "Default Company",
+      description: "Default company for system",
+      isDefault: true,
+    },
+  });
+
+  // Create or get default department
+  const defaultDepartment = await prisma.department.upsert({
+    where: {
+      name_companyId: {
+        name: "General",
+        companyId: defaultCompany.id,
+      },
+    },
+    update: { isDefault: true },
+    create: {
+      name: "General",
+      description: "General department for all users",
+      companyId: defaultCompany.id,
+      isDefault: true,
+    },
+  });
+
+  return { defaultCompany, defaultDepartment };
+}
+
+async function ensureUserInDefaultDepartment(
+  userId: string,
+  departmentId: string
+) {
+  // Add user to department if not already present
+  await prisma.userDepartment.upsert({
+    where: {
+      userId_departmentId: {
+        userId,
+        departmentId,
+      },
+    },
+    update: {},
+    create: {
+      userId,
+      departmentId,
+    },
+  });
+}
+
 async function main() {
   // Parse command line arguments
   const argv = await yargs(hideBin(process.argv))
@@ -144,8 +196,16 @@ async function main() {
     console.log("Clearing existing data...");
     await prisma.event.deleteMany();
     await prisma.lock.deleteMany();
+    await prisma.userDepartment.deleteMany();
+    await prisma.department.deleteMany();
+    await prisma.company.deleteMany();
     await prisma.user.deleteMany();
   }
+
+  // Create default company and department
+  const { defaultCompany, defaultDepartment } =
+    await createDefaultCompanyAndDepartment();
+  console.log("Created default company and department");
 
   // Create default bob user with locks and events
   const bobPassword = await hash("bob", 10);
@@ -159,6 +219,7 @@ async function main() {
       role: Role.ADMIN,
     },
   });
+  await ensureUserInDefaultDepartment(bob.id, defaultDepartment.id);
   console.log("Created default user:", bob.email);
 
   // Create locks for bob
@@ -201,6 +262,7 @@ async function main() {
           role,
         },
       });
+      await ensureUserInDefaultDepartment(user.id, defaultDepartment.id);
       console.log(`Created faker user: ${user.email} with role: ${role}`);
 
       // Create locks for each faker user

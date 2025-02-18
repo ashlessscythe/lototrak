@@ -10,11 +10,35 @@ export type EventType =
   | "MAINTENANCE"
   | "EMERGENCY_OVERRIDE";
 
+export interface Department {
+  id: string;
+  name: string;
+  description?: string | null;
+  companyId: string;
+  company: Company;
+  isDefault: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  description?: string | null;
+  isDefault: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface User {
   id: string;
   email: string;
   name?: string | null;
   role: Role;
+  departments: {
+    department: Department;
+    assignedAt: Date;
+  }[];
   createdAt: Date;
   updatedAt: Date;
 }

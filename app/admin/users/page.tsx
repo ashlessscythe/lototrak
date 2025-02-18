@@ -9,9 +9,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Role, User } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -22,12 +30,32 @@ import {
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showDeptDialog, setShowDeptDialog] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUsers();
+    fetchDepartments();
   }, []);
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await fetch("/api/admin/departments");
+      if (response.ok) {
+        const data = await response.json();
+        setDepartments(data);
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch departments",
+      });
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -92,7 +120,13 @@ export default function UsersPage() {
     }
   };
 
-  const roleOptions: Role[] = ["ADMIN", "MANAGER", "SUPERVISOR", "USER", "PENDING"];
+  const roleOptions: Role[] = [
+    "ADMIN",
+    "MANAGER",
+    "SUPERVISOR",
+    "USER",
+    "PENDING",
+  ];
 
   return (
     <div className="container mx-auto p-4">
@@ -116,6 +150,29 @@ export default function UsersPage() {
                       <p className="text-sm text-muted-foreground">
                         Created: {new Date(user.createdAt).toLocaleDateString()}
                       </p>
+                      <div className="mt-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUserId(user.id);
+                              setShowDeptDialog(true);
+                            }}
+                          >
+                            Assign Department
+                          </Button>
+                        </div>
+                        {user.departments.map(({ department, assignedAt }) => (
+                          <p
+                            key={department.id}
+                            className="text-sm text-muted-foreground"
+                          >
+                            {department.company.name} / {department.name}
+                            {department.isDefault && " (Default)"}
+                          </p>
+                        ))}
+                      </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className={`text-sm ${getRoleColor(user.role)}`}>
@@ -146,6 +203,65 @@ export default function UsersPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={showDeptDialog} onOpenChange={setShowDeptDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Department</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Select Department</Label>
+              <Select
+                onValueChange={async (deptId) => {
+                  if (!selectedUserId) return;
+
+                  try {
+                    const response = await fetch(
+                      `/api/users/${selectedUserId}`,
+                      {
+                        method: "PATCH",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ departmentId: deptId }),
+                      }
+                    );
+
+                    if (response.ok) {
+                      toast({
+                        title: "Success",
+                        description: "Department assigned successfully",
+                      });
+                      fetchUsers();
+                      setShowDeptDialog(false);
+                    } else {
+                      throw new Error("Failed to assign department");
+                    }
+                  } catch (error) {
+                    toast({
+                      variant: "destructive",
+                      title: "Error",
+                      description: "Failed to assign department",
+                    });
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

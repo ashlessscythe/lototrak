@@ -20,11 +20,24 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const { role } = await request.json();
+    const { role, departmentId } = await request.json();
 
-    // Validate role
-    if (!Object.values(Role).includes(role)) {
+    // Validate role if provided
+    if (role && !Object.values(Role).includes(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+    }
+
+    // Validate department if provided
+    if (departmentId) {
+      const department = await prisma.department.findUnique({
+        where: { id: departmentId },
+      });
+      if (!department) {
+        return NextResponse.json(
+          { error: "Department not found" },
+          { status: 404 }
+        );
+      }
     }
 
     // Get current user role
@@ -42,20 +55,54 @@ export async function PATCH(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Update user role
-    const updatedUser = await prisma.user.update({
-      where: {
-        id: params.userId,
-      },
-      data: {
-        role: role as Role,
-      },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        updatedAt: true,
-      },
+    // Prepare update data
+    const updateData: any = {};
+    if (role) {
+      updateData.role = role as Role;
+    }
+
+    // Start transaction to handle both role and department updates
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      // Update user role if provided
+      const user = await tx.user.update({
+        where: { id: params.userId },
+        data: updateData,
+        include: {
+          departments: {
+            include: {
+              department: {
+                include: {
+                  company: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Handle department assignment if provided
+      if (departmentId) {
+        // Check if already assigned
+        const existing = await tx.userDepartment.findUnique({
+          where: {
+            userId_departmentId: {
+              userId: params.userId,
+              departmentId,
+            },
+          },
+        });
+
+        if (!existing) {
+          await tx.userDepartment.create({
+            data: {
+              userId: params.userId,
+              departmentId,
+            },
+          });
+        }
+      }
+
+      return user;
     });
 
     // Send email if user was pending and is now approved

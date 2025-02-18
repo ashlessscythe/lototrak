@@ -21,6 +21,12 @@ export default function AdminDashboard() {
       icon: "👥",
     },
     {
+      title: "Department Management",
+      description: "Manage departments and assignments",
+      link: "/admin/departments",
+      icon: "🏢",
+    },
+    {
       title: "Lock Management",
       description: "Manage locks and assignments",
       link: "/locks",

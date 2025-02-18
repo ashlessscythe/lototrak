@@ -26,6 +26,27 @@ export async function GET() {
         role: true,
         createdAt: true,
         updatedAt: true,
+        departments: {
+          select: {
+            assignedAt: true,
+            department: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                isDefault: true,
+                company: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                    isDefault: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",
