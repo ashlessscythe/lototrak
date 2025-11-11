@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { Status } from "@/lib/types";
 import { authOptions } from "@/app/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
