@@ -1,42 +1,23 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@/lib/types";
-import { nanoid } from "nanoid";
-import { authOptions } from "@/app/auth";
+import { requireAuthResponse, requireAdminOrManager } from "@/lib/auth/helpers";
+import { ApiErrors, handleApiError } from "@/lib/api/errors";
+import { isValidQRCode, generateQRCode } from "@/lib/utils/qr";
+import { logger } from "@/lib/utils/logger";
 
-// Helper to validate QR code format
-const isValidQRCode = (code: string) => {
-  // QR code should be alphanumeric and reasonable length (4-16 chars for better readability)
-  return /^[a-zA-Z0-9_-]{4,16}$/.test(code);
-};
-
-// Helper to generate a QR code
-const generateQRCode = (length: number = 14) => {
-  return nanoid(length);
-};
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    console.log("GET /api/locks - Fetching session...");
-    const session = await getServerSession(authOptions);
-    console.log("Session:", session);
-
-    if (!session) {
-      console.log("No session found - Unauthorized");
-      return new NextResponse("Unauthorized", { status: 401 });
+    const authResult = await requireAuthResponse();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
-    // Allow all authenticated users to view locks
-    if (session.user?.role === "PENDING") {
-      console.log("Invalid role:", session.user?.role);
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    console.log("Fetching locks from database...");
     const locks = await prisma.lock.findMany({
       where: {
-        deleted: false, // Only fetch non-deleted locks
+        deleted: false,
       },
       include: {
         assignedTo: {
@@ -50,64 +31,46 @@ export async function GET() {
         createdAt: "desc",
       },
     });
-    console.log("Fetched locks:", locks);
 
     return NextResponse.json(locks);
   } catch (error) {
-    console.error("[LOCKS_GET]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return handleApiError(error, "LOCKS_GET");
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    // Only ADMIN and MANAGER can create new locks
-    if (!["ADMIN", "MANAGER"].includes(session.user?.role || "")) {
-      return new NextResponse(
-        "Only administrators and managers can create locks",
-        {
-          status: 403,
-        }
-      );
+    const authResult = await requireAdminOrManager();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const body = await req.json();
     const { name, location, status, safetyProcedures, qrCode } = body;
 
     if (!name || !location || !status) {
-      return new NextResponse("Missing required fields", { status: 400 });
+      return ApiErrors.missingFields(["name", "location", "status"]);
     }
 
-    // Validate safety procedures
     if (!Array.isArray(safetyProcedures)) {
-      return new NextResponse("Safety procedures must be an array", {
-        status: 400,
-      });
+      return ApiErrors.badRequest("Safety procedures must be an array");
     }
 
-    // Generate QR code if not provided, or validate provided one
     const finalQrCode = qrCode || generateQRCode();
 
-    // Validate QR code format
     if (!isValidQRCode(finalQrCode)) {
-      return new NextResponse(
-        "Invalid QR code format. Must be 4-16 alphanumeric characters, underscores, or hyphens.",
-        { status: 400 }
+      return ApiErrors.invalidFormat(
+        "QR code",
+        "Must be 4-16 alphanumeric characters, underscores, or hyphens"
       );
     }
 
-    // Check if QR code is already in use (including deleted locks)
     const existingLock = await prisma.lock.findUnique({
       where: { qrCode: finalQrCode },
     });
 
     if (existingLock) {
-      return new NextResponse("QR code already in use", { status: 400 });
+      return ApiErrors.badRequest("QR code already in use");
     }
 
     const lock = await prisma.lock.create({
@@ -121,45 +84,34 @@ export async function POST(req: Request) {
       },
     });
 
+    logger.info("Lock created", {
+      lockId: lock.id,
+      createdBy: authResult.user.id,
+    });
     return NextResponse.json(lock);
   } catch (error) {
-    console.error("[LOCKS_POST]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return handleApiError(error, "LOCKS_POST");
   }
 }
 
 export async function PUT(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    // Only ADMIN and MANAGER can update locks
-    if (!["ADMIN", "MANAGER"].includes(session.user?.role || "")) {
-      return new NextResponse(
-        "Only administrators and managers can update locks",
-        {
-          status: 403,
-        }
-      );
+    const authResult = await requireAdminOrManager();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const body = await req.json();
     const { id, name, location, status, safetyProcedures, qrCode } = body;
 
     if (!id || !name || !location || !status) {
-      return new NextResponse("Missing required fields", { status: 400 });
+      return ApiErrors.missingFields(["id", "name", "location", "status"]);
     }
 
-    // Validate safety procedures
     if (!Array.isArray(safetyProcedures)) {
-      return new NextResponse("Safety procedures must be an array", {
-        status: 400,
-      });
+      return ApiErrors.badRequest("Safety procedures must be an array");
     }
 
-    // Check if lock exists and is not deleted
     const existingLock = await prisma.lock.findFirst({
       where: {
         id,
@@ -168,25 +120,20 @@ export async function PUT(req: Request) {
     });
 
     if (!existingLock) {
-      return new NextResponse("Lock not found or has been deleted", {
-        status: 404,
-      });
+      return ApiErrors.notFound("Lock");
     }
 
-    // Generate new QR code if empty, or validate provided one
     const finalQrCode = !qrCode ? generateQRCode() : qrCode;
     const isQrCodeChanging = finalQrCode !== existingLock.qrCode;
 
     if (isQrCodeChanging) {
-      // Validate new QR code format
       if (!isValidQRCode(finalQrCode)) {
-        return new NextResponse(
-          "Invalid QR code format. Must be 4-16 alphanumeric characters, underscores, or hyphens.",
-          { status: 400 }
+        return ApiErrors.invalidFormat(
+          "QR code",
+          "Must be 4-16 alphanumeric characters, underscores, or hyphens"
         );
       }
 
-      // Check if new QR code is already in use
       const existingQRLock = await prisma.lock.findFirst({
         where: {
           qrCode: finalQrCode,
@@ -195,7 +142,7 @@ export async function PUT(req: Request) {
       });
 
       if (existingQRLock) {
-        return new NextResponse("QR code already in use", { status: 400 });
+        return ApiErrors.badRequest("QR code already in use");
       }
     }
 
@@ -205,14 +152,17 @@ export async function PUT(req: Request) {
         name,
         location,
         status: status as Status,
-        qrCode: isQrCodeChanging ? finalQrCode : undefined, // Only update if changed
+        qrCode: isQrCodeChanging ? finalQrCode : undefined,
         safetyProcedures: safetyProcedures as string[],
       },
     });
 
+    logger.info("Lock updated", {
+      lockId: lock.id,
+      updatedBy: authResult.user.id,
+    });
     return NextResponse.json(lock);
   } catch (error) {
-    console.error("[LOCKS_PUT]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return handleApiError(error, "LOCKS_PUT");
   }
 }

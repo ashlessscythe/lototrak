@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/auth";
+import { requireAdmin } from "@/lib/auth/helpers";
+import { ApiErrors, handleApiError } from "@/lib/api/errors";
+import { logger } from "@/lib/utils/logger";
 
 // GET /api/admin/companies
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const authResult = await requireAdmin();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const companies = await prisma.company.findMany({
@@ -17,24 +18,23 @@ export async function GET() {
 
     return NextResponse.json(companies);
   } catch (error) {
-    console.error("Failed to fetch companies:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return handleApiError(error, "ADMIN_COMPANIES_GET");
   }
 }
 
 // POST /api/admin/companies
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const authResult = await requireAdmin();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const body = await request.json();
     const { name, description } = body;
 
     if (!name) {
-      return new NextResponse("Name is required", { status: 400 });
+      return ApiErrors.missingFields(["name"]);
     }
 
     const company = await prisma.company.create({
@@ -44,29 +44,32 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    logger.info("Company created", {
+      companyId: company.id,
+      createdBy: authResult.user.id,
+    });
     return NextResponse.json(company);
   } catch (error: any) {
     if (error.code === "P2002") {
-      return new NextResponse("Company name already exists", { status: 400 });
+      return ApiErrors.badRequest("Company name already exists");
     }
-    console.error("Failed to create company:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return handleApiError(error, "ADMIN_COMPANIES_POST");
   }
 }
 
 // PUT /api/admin/companies
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const authResult = await requireAdmin();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const body = await request.json();
     const { id, name, description } = body;
 
     if (!id || !name) {
-      return new NextResponse("ID and name are required", { status: 400 });
+      return ApiErrors.missingFields(["id", "name"]);
     }
 
     const company = await prisma.company.update({
@@ -77,15 +80,18 @@ export async function PUT(request: NextRequest) {
       },
     });
 
+    logger.info("Company updated", {
+      companyId: company.id,
+      updatedBy: authResult.user.id,
+    });
     return NextResponse.json(company);
   } catch (error: any) {
     if (error.code === "P2002") {
-      return new NextResponse("Company name already exists", { status: 400 });
+      return ApiErrors.badRequest("Company name already exists");
     }
     if (error.code === "P2025") {
-      return new NextResponse("Company not found", { status: 404 });
+      return ApiErrors.notFound("Company");
     }
-    console.error("Failed to update company:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return handleApiError(error, "ADMIN_COMPANIES_PUT");
   }
 }

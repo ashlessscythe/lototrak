@@ -1,32 +1,21 @@
 import { NextResponse } from "next/server";
-
-// Mark route as dynamic
-export const dynamic = "force-dynamic";
-
-import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
-import { authOptions } from "@/app/auth";
+import { requireManagerRole } from "@/lib/auth/helpers";
+import { ApiErrors, handleApiError } from "@/lib/api/errors";
+import { isValidQRCode } from "@/lib/utils/qr";
 import { EventType, Status } from "@prisma/client";
+import { logger } from "@/lib/utils/logger";
 
-// Helper to validate QR code format
-const isValidQRCode = (code: string) => {
-  // QR code should be alphanumeric and reasonable length
-  return /^[a-zA-Z0-9_-]{4,32}$/.test(code);
-};
+export const dynamic = "force-dynamic";
 
 export async function POST(
   req: Request,
   { params }: { params: { lockId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id || session.user.role === "PENDING") {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    // Only ADMIN, MANAGER, and SUPERVISOR can assign locks
-    if (!["ADMIN", "MANAGER", "SUPERVISOR"].includes(session.user.role)) {
-      return new NextResponse("Insufficient permissions", { status: 403 });
+    const authResult = await requireManagerRole();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const { lockId } = params;
@@ -34,12 +23,9 @@ export async function POST(
     const { safetyChecks } = body;
 
     if (!Array.isArray(safetyChecks)) {
-      return new NextResponse("Safety checks must be an array", {
-        status: 400,
-      });
+      return ApiErrors.badRequest("Safety checks must be an array");
     }
 
-    // Try to find the lock by ID first
     let lock = await prisma.lock.findUnique({
       where: { id: lockId },
       include: {
@@ -47,7 +33,6 @@ export async function POST(
       },
     });
 
-    // If not found by ID and looks like a QR code, try QR code lookup
     if (!lock && isValidQRCode(lockId)) {
       lock = await prisma.lock.findUnique({
         where: { qrCode: lockId },
@@ -58,31 +43,26 @@ export async function POST(
     }
 
     if (!lock) {
-      return new NextResponse("Lock not found", { status: 404 });
+      return ApiErrors.notFound("Lock");
     }
 
-    // For supervisors, ensure lock is in AVAILABLE state
-    if (session.user.role === "SUPERVISOR" && lock.status !== "AVAILABLE") {
-      return new NextResponse("Supervisors can only assign available locks", {
-        status: 403,
-      });
+    if (
+      authResult.user.role === "SUPERVISOR" &&
+      lock.status !== "AVAILABLE"
+    ) {
+      return ApiErrors.forbidden("Supervisors can only assign available locks");
     }
 
-    // Verify lock is available
     if (lock.status !== "AVAILABLE") {
-      return new NextResponse(
-        `Lock is not available (current status: ${lock.status})`,
-        { status: 400 }
+      return ApiErrors.badRequest(
+        `Lock is not available (current status: ${lock.status})`
       );
     }
 
-    // Verify all required safety procedures are checked
     const requiredProcedures = (lock.safetyProcedures as string[]) || [];
 
     if (requiredProcedures.length === 0) {
-      return new NextResponse("No safety procedures defined for this lock", {
-        status: 400,
-      });
+      return ApiErrors.badRequest("No safety procedures defined for this lock");
     }
 
     const missingChecks = requiredProcedures.filter(
@@ -90,39 +70,38 @@ export async function POST(
     );
 
     if (missingChecks.length > 0) {
-      return new NextResponse(
-        `Missing safety checks: ${missingChecks.join(", ")}`,
-        { status: 400 }
+      return ApiErrors.badRequest(
+        `Missing safety checks: ${missingChecks.join(", ")}`
       );
     }
 
-    // Update lock status and assign to user
     const updatedLock = await prisma.lock.update({
       where: { id: lock.id },
       data: {
         status: Status.IN_USE,
-        userId: session.user.id,
+        userId: authResult.user.id,
       },
     });
 
-    // Create assignment event with safety checks and lock information
     await prisma.event.create({
       data: {
         type: EventType.LOCK_ASSIGNED,
         details: "Lock assigned after safety checks",
         safetyChecks: safetyChecks,
         lockId: lock.id,
-        userId: session.user.id,
+        userId: authResult.user.id,
         location: lock.location,
         lockName: lock.name,
-        lockStatus: Status.IN_USE, // Store the new status
+        lockStatus: Status.IN_USE,
       },
     });
 
+    logger.info("Lock assigned", {
+      lockId: lock.id,
+      assignedBy: authResult.user.id,
+    });
     return NextResponse.json(updatedLock);
   } catch (error) {
-    console.error("[LOCK_ASSIGN]", error);
-    const message = error instanceof Error ? error.message : "Internal error";
-    return new NextResponse(message, { status: 500 });
+    return handleApiError(error, "LOCK_ASSIGN");
   }
 }

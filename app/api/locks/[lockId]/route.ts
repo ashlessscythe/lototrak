@@ -1,27 +1,20 @@
 import { NextResponse } from "next/server";
-
-// Mark route as dynamic
-export const dynamic = "force-dynamic";
-
-import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { Status } from "@/lib/types";
-import { authOptions } from "@/app/auth";
+import { requireAuthResponse, requireAdmin } from "@/lib/auth/helpers";
+import { ApiErrors, handleApiError } from "@/lib/api/errors";
+import { logger } from "@/lib/utils/logger";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
   { params }: { params: { lockId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    // Allow all authenticated non-pending users to view locks
-    if (session.user?.role === "PENDING") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const authResult = await requireAuthResponse();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const { lockId } = params;
@@ -42,13 +35,12 @@ export async function GET(
     });
 
     if (!lock) {
-      return new NextResponse("Lock not found", { status: 404 });
+      return ApiErrors.notFound("Lock");
     }
 
     return NextResponse.json(lock);
   } catch (error) {
-    console.error("[LOCK_GET]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return handleApiError(error, "LOCK_GET");
   }
 }
 
@@ -57,17 +49,9 @@ export async function PUT(
   { params }: { params: { lockId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    // Only ADMIN can update locks
-    if (session.user?.role !== "ADMIN") {
-      return new NextResponse("Only administrators can update locks", {
-        status: 403,
-      });
+    const authResult = await requireAdmin();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const { lockId } = params;
@@ -75,17 +59,13 @@ export async function PUT(
     const { name, location, status, safetyProcedures } = body;
 
     if (!name || !location || !status) {
-      return new NextResponse("Missing required fields", { status: 400 });
+      return ApiErrors.missingFields(["name", "location", "status"]);
     }
 
-    // Validate safety procedures
     if (!Array.isArray(safetyProcedures)) {
-      return new NextResponse("Safety procedures must be an array", {
-        status: 400,
-      });
+      return ApiErrors.badRequest("Safety procedures must be an array");
     }
 
-    // Check if lock exists and is not deleted
     const existingLock = await prisma.lock.findFirst({
       where: {
         id: lockId,
@@ -94,9 +74,7 @@ export async function PUT(
     });
 
     if (!existingLock) {
-      return new NextResponse("Lock not found or has been deleted", {
-        status: 404,
-      });
+      return ApiErrors.notFound("Lock");
     }
 
     const lock = await prisma.lock.update({
@@ -109,10 +87,10 @@ export async function PUT(
       },
     });
 
+    logger.info("Lock updated", { lockId: lock.id, updatedBy: authResult.user.id });
     return NextResponse.json(lock);
   } catch (error) {
-    console.error("[LOCK_PUT]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return handleApiError(error, "LOCK_PUT");
   }
 }
 
@@ -121,57 +99,40 @@ export async function DELETE(
   { params }: { params: { lockId: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    // Only ADMIN can delete locks
-    if (session.user?.role !== "ADMIN") {
-      return new NextResponse("Only administrators can delete locks", {
-        status: 403,
-      });
+    const authResult = await requireAdmin();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const { lockId } = params;
 
-    // First get the lock to access its location
     const existingLock = await prisma.lock.findUnique({
       where: { id: lockId },
     });
 
     if (!existingLock) {
-      return new NextResponse("Lock not found", { status: 404 });
+      return ApiErrors.notFound("Lock");
     }
 
-    // Check if lock can be deleted
     if (existingLock.status === "IN_USE") {
-      return new NextResponse("Cannot delete a lock that is currently in use", {
-        status: 400,
-      });
+      return ApiErrors.badRequest("Cannot delete a lock that is currently in use");
     }
 
     if (existingLock.status === "MAINTENANCE") {
-      return new NextResponse("Cannot delete a lock that is in maintenance", {
-        status: 400,
-      });
+      return ApiErrors.badRequest("Cannot delete a lock that is in maintenance");
     }
 
     if (existingLock.status === "RETIRED") {
-      return new NextResponse("Cannot delete a lock that is already retired", {
-        status: 400,
-      });
+      return ApiErrors.badRequest("Cannot delete a lock that is already retired");
     }
 
-    // Then mark as deleted and create an event
-    const [lock, event] = await prisma.$transaction([
+    const [lock] = await prisma.$transaction([
       prisma.lock.update({
         where: { id: lockId },
         data: {
           deleted: true,
-          status: "RETIRED", // Also set status to RETIRED
-          userId: null, // Remove any assignment
+          status: "RETIRED",
+          userId: null,
         },
       }),
       prisma.event.create({
@@ -182,18 +143,18 @@ export async function DELETE(
           lockStatus: existingLock.status,
           location: existingLock.location,
           lockId: lockId,
-          userId: session.user.id,
+          userId: authResult.user.id,
         },
       }),
     ]);
 
+    logger.info("Lock deleted", { lockId, deletedBy: authResult.user.id });
     return NextResponse.json({
       success: true,
       message: "Lock marked as deleted",
       lock,
     });
   } catch (error) {
-    console.error("[LOCK_DELETE]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return handleApiError(error, "LOCK_DELETE");
   }
 }

@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/auth";
+import { requireAdmin } from "@/lib/auth/helpers";
+import { ApiErrors, handleApiError } from "@/lib/api/errors";
+import { logger } from "@/lib/utils/logger";
 
 // GET /api/admin/departments
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const authResult = await requireAdmin();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const departments = await prisma.department.findMany({
@@ -37,36 +38,33 @@ export async function GET() {
 
     return NextResponse.json(departments);
   } catch (error) {
-    console.error("Failed to fetch departments:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return handleApiError(error, "ADMIN_DEPARTMENTS_GET");
   }
 }
 
 // POST /api/admin/departments
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "ADMIN") {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const authResult = await requireAdmin();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const body = await request.json();
     const { name, description, companyId } = body;
 
     if (!name || !companyId) {
-      return new NextResponse("Name and company are required", { status: 400 });
+      return ApiErrors.missingFields(["name", "companyId"]);
     }
 
-    // Check if company exists
     const company = await prisma.company.findUnique({
       where: { id: companyId },
     });
 
     if (!company) {
-      return new NextResponse("Company not found", { status: 404 });
+      return ApiErrors.notFound("Company");
     }
 
-    // Check if department name already exists in company
     const existingDepartment = await prisma.department.findFirst({
       where: {
         name,
@@ -75,9 +73,8 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingDepartment) {
-      return new NextResponse(
-        "Department with this name already exists in the company",
-        { status: 400 }
+      return ApiErrors.badRequest(
+        "Department with this name already exists in the company"
       );
     }
 
@@ -97,9 +94,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    logger.info("Department created", {
+      departmentId: department.id,
+      createdBy: authResult.user.id,
+    });
     return NextResponse.json(department);
   } catch (error) {
-    console.error("Failed to create department:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return handleApiError(error, "ADMIN_DEPARTMENTS_POST");
   }
 }

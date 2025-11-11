@@ -1,26 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { Role } from "@prisma/client";
-
-// Helper to check if user is admin
-async function isAdmin() {
-  const session = await getServerSession();
-  if (!session?.user?.email) return false;
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { role: true },
-  });
-
-  return user?.role === Role.ADMIN;
-}
+import { requireAdmin } from "@/lib/auth/helpers";
+import { ApiErrors, handleApiError } from "@/lib/api/errors";
+import { logger } from "@/lib/utils/logger";
 
 // GET /api/admin/settings
 export async function GET() {
   try {
-    if (!(await isAdmin())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    const authResult = await requireAdmin();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const settings = await prisma.systemSettings.findMany();
@@ -31,43 +20,33 @@ export async function GET() {
 
     return NextResponse.json(settingsMap);
   } catch (error) {
-    console.error("Error fetching settings:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch settings" },
-      { status: 500 }
-    );
+    return handleApiError(error, "ADMIN_SETTINGS_GET");
   }
 }
 
 // POST /api/admin/settings
 export async function POST(request: NextRequest) {
   try {
-    if (!(await isAdmin())) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    const authResult = await requireAdmin();
+    if (authResult instanceof NextResponse) {
+      return authResult;
     }
 
     const { key, value } = await request.json();
 
     if (!key || typeof value === "undefined") {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return ApiErrors.missingFields(["key", "value"]);
     }
 
-    // Upsert the setting
     await prisma.systemSettings.upsert({
       where: { key },
       update: { value },
       create: { key, value },
     });
 
+    logger.info("System setting updated", { key, updatedBy: authResult.user.id });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating setting:", error);
-    return NextResponse.json(
-      { error: "Failed to update setting" },
-      { status: 500 }
-    );
+    return handleApiError(error, "ADMIN_SETTINGS_POST");
   }
 }
